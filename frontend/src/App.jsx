@@ -1,15 +1,16 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
-import Home from './pages/Home'
-import Collection from './pages/Collection'
+import Home from './components/pages/Home'
+import Collection from './components/pages/Collection'
 import Navbar from './components/Navbar'
-import About from './pages/About'
-import Contact from './pages/Contact'
-import Product from './pages/Product'
-import Login from './pages/Login'
-import Orders from './pages/Orders'
-import PlaceOrder from './pages/PlaceOrder'
-import Cart from './pages/Cart'
+import About from './components/pages/About'
+import Contact from './components/pages/Contact'
+import Product from './components/pages/Product'
+import Login from './components/pages/Login'
+import Orders from './components/pages/Orders'
+import PlaceOrder from './components/pages/PlaceOrder'
+import Cart from './components/pages/Cart'
+import Footer from './components/Footer'
 function App() {
   return (
     <div className='px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]'>
@@ -27,6 +28,7 @@ function App() {
 
 
       </Routes>
+      <Footer/>
 
     </div>
   )

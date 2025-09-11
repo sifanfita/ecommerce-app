@@ -23,6 +23,9 @@ import shoppingBag from './shopping-bag.png';
 import trashBin from './trash-bin.png';
 import searchIcon from './searchicon.png';
 import profileIcon from './profileicon.png';
+import heroImage from './heroimage.jpg';
+import supportIcon from './supporticon.png';
+import qualityIcon from './qualityicon.png';
 
 export const assets = {
   crossIcon,
@@ -50,11 +53,14 @@ export const assets = {
   trashBin,
   searchIcon,
   profileIcon,
+  heroImage,
+  qualityIcon,
+  supportIcon,
 };
 
 export const products = [
     {
-        id: 1,
+        _id: 1,
         name: 'Classic Denim Jacket',
         description: 'Timeless denim jacket with a regular fit and durable stitching.',
         price: 120,
@@ -65,7 +71,7 @@ export const products = [
         bestSeller: true,
     },
     {
-        id: 2,
+        _id: 2,
         name: 'Puffer Winter Jacket',
         description: 'Warm puffer jacket with lightweight insulation and water-resistant shell.',
         price: 180,
@@ -75,8 +81,9 @@ export const products = [
         date: 1725926400,
         bestSeller: false,
     },
+    
     {
-        id: 3,
+        _id: 3,
         name: 'Leather Biker Jacket',
         description: 'Premium faux-leather biker jacket with zip details and tailored cut.',
         price: 210,
@@ -87,7 +94,7 @@ export const products = [
         bestSeller: true,
     },
     {
-        id: 4,
+        _id: 4,
         name: 'Oxford Shirt',
         description: 'Smart casual oxford shirt, breathable cotton with a clean finish.',
         price: 65,
@@ -98,7 +105,7 @@ export const products = [
         bestSeller: false,
     },
     {
-        id: 5,
+        _id: 5,
         name: 'Slim Fit Shirt',
         description: 'Slim-fit long sleeve shirt for everyday office wear.',
         price: 59,
@@ -109,7 +116,7 @@ export const products = [
         bestSeller: true,
     },
     {
-        id: 6,
+        _id: 6,
         name: 'Casual Check Shirt',
         description: 'Soft cotton check shirt with button-down collar.',
         price: 62,
@@ -120,7 +127,7 @@ export const products = [
         bestSeller: false,
     },
     {
-        id: 7,
+        _id: 7,
         name: 'Graphic T-shirt',
         description: 'Comfortable crew-neck tee with minimal graphic print.',
         price: 30,
@@ -131,7 +138,7 @@ export const products = [
         bestSeller: true,
     },
     {
-        id: 8,
+        _id: 8,
         name: 'Essential Cotton T-shirt',
         description: 'Everyday soft cotton tee with a regular fit.',
         price: 25,
@@ -142,7 +149,7 @@ export const products = [
         bestSeller: false,
     },
     {
-        id: 9,
+        _id: 9,
         name: 'Athletic Fit T-shirt',
         description: 'Moisture-wicking athletic tee for workouts and casual wear.',
         price: 28,
@@ -153,7 +160,7 @@ export const products = [
         bestSeller: true,
     },
     {
-        id: 10,
+        _id: 10,
         name: 'Chino Trousers',
         description: 'Classic chinos with stretch for comfort and movement.',
         price: 75,
@@ -164,7 +171,7 @@ export const products = [
         bestSeller: false,
     },
     {
-        id: 11,
+        _id: 11,
         name: 'Slim Fit Trousers',
         description: 'Slim-fit trousers with tapered leg and sharp silhouette.',
         price: 80,
@@ -175,7 +182,7 @@ export const products = [
         bestSeller: true,
     },
     {
-        id: 12,
+        _id: 12,
         name: 'Casual Drawstring Trousers',
         description: 'Relaxed-fit trousers with drawstring waist for everyday wear.',
         price: 65,
@@ -186,7 +193,7 @@ export const products = [
         bestSeller: false,
     },
     {
-        id: 13,
+        _id: 13,
         name: 'Running Shoes',
         description: 'Lightweight running shoes with breathable mesh upper.',
         price: 95,
@@ -197,7 +204,7 @@ export const products = [
         bestSeller: true,
     },
     {
-        id: 14,
+        _id: 14,
         name: 'Casual Sneakers',
         description: 'Everyday sneakers with cushioned sole and clean profile.',
         price: 85,
@@ -208,7 +215,7 @@ export const products = [
         bestSeller: false,
     },
     {
-        id: 15,
+        _id: 15,
         name: 'High-Top Trainers',
         description: 'High-top shoes for style and ankle support.',
         price: 99,
@@ -219,7 +226,7 @@ export const products = [
         bestSeller: true,
     },
     {
-        id: 16,
+        _id: 16,
         name: 'Sport Tuta Set',
         description: 'Two-piece athletic tuta set with breathable fabric.',
         price: 120,
