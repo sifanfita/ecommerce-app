@@ -12,9 +12,12 @@ import PlaceOrder from './components/pages/PlaceOrder'
 import Cart from './components/pages/Cart'
 import Footer from './components/Footer'
 import SearchBar from './components/SearchBar'
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 function App() {
   return (
     <div className='px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]'>
+      <ToastContainer position="bottom-left" autoClose={2000} />
       <Navbar /> 
       <SearchBar />
       <Routes>
