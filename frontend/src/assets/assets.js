@@ -28,6 +28,8 @@ import supportIcon from './supporticon.png';
 import qualityIcon from './qualityicon.png';
 import star from './star.png';
 import starDull from './star-dull.png';
+import aboutImage from './about-img.jpg';
+import ContactImage from './contact-img.jpg';
 
 export const assets = {
   crossIcon,
@@ -60,6 +62,8 @@ export const assets = {
   supportIcon,
     star,
     starDull,
+    aboutImage,
+    ContactImage,
 };
 
 export const products = [

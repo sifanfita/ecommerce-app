@@ -12,9 +12,7 @@ function Cart() {
     currency,
     delivery_fee,
     updateQuantity,
-    handleCheckout,
-    paymentProof,
-    setPaymentProof,
+    navigate,
   } = useContext(ShopContext);
 
   const [cartData, setCartData] = useState([]);
@@ -99,28 +97,12 @@ function Cart() {
         <div className="w-full sm:w-[450px]">
           <CartTotal />
           <div className="w-full text-end">
-            <div className="w-full my-4">
-              <label className="block mb-2 text-sm font-medium">
-                Upload Proof of Payment:
-              </label>
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                onChange={(e) => setPaymentProof(e.target.files[0])}
-                className="border p-2 w-full"
-              />
-              {paymentProof && (
-                <p className="text-xs mt-2">
-                  Selected file: {paymentProof.name}
-                </p>
-              )}
-            </div>
+            
 
             <button
               className="bg-black text-white text-sm my-8 px-8 py-3"
-              disabled={!paymentProof || cartData.length === 0}
-              onClick={() => handleCheckout()}
-            >
+              disabled={!cartData.length === 0}
+              onClick={() => navigate("/place-order")}>
               PROCEED TO CHECKOUT
             </button>
           </div>

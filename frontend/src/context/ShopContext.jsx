@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState } from "react";
 import { products } from "../assets/assets";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 
 export const ShopContext = createContext();
@@ -12,6 +13,36 @@ const ShopContextProvider = (props) => {
     const [showSearch, setShowSearch] = useState(false);
     const [cartItems, setCartItems] = useState({});
     const [paymentProof, setPaymentProof] = useState(null);
+    const navigate = useNavigate();
+    
+    const [deliveryInfo, setDeliveryInfo] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    street: "",
+    city: "",
+    state: "",
+    phone: "",
+  });
+
+  const [productstData, setProductstData] = useState([]);
+  
+    useEffect(() => {
+      const tempData = [];
+      for (const items in cartItems) {
+        for (const item in cartItems[items]) {
+          if (cartItems[items][item] > 0) {
+            tempData.push({
+              _id: items,
+              size: item,
+              quantity: cartItems[items][item],
+            });
+          }
+        }
+      }
+      setProductstData(tempData);
+    }, [cartItems]);
+
 
     const addToCart = async (ItemId, size) => {
 
@@ -83,25 +114,33 @@ const ShopContextProvider = (props) => {
 
     }
 
-    const handleCheckout = () => {
-        if (!paymentProof) {
-            alert("Please upload proof of payment before proceeding.");
-            return; 
-        }
+    const handlePlaceOrder = () => {
+    if (!paymentProof) {
+      toast.error("⚠️ Please upload proof of payment before placing order.");
+      return;
+    }
 
-        const formData = new FormData();
-        formData.append("paymentProof", paymentProof); 
-        formData.append("cart", JSON.stringify(cartItems));
+    
+  
 
-        // Simulate API call for now
-        console.log("Cart items:", cartItems);
-        console.log("Uploaded file:", paymentProof);
-        alert("Checkout simulated!");
+    const orderData = {
+      customer: deliveryInfo,
+      items: productstData,
+      totalAmount: getCartAmount() + (productstData.length > 0 ? 100 : 0), // e.g. +delivery_fee
+      currency,
+      paymentProof: paymentProof.name,
+      orderDate: new Date().toLocaleDateString(),
     };
 
+    
+
+    toast.success("✅ Order placed successfully (simulated).");
+    navigate("/orders");
+    
+  };
 
     const value = {
-        products, currency, delivery_fee, search, setSearch, showSearch, setShowSearch, cartItems, setCartItems, addToCart, getCartCount, updateQuantity, getCartAmount, handleCheckout, paymentProof, setPaymentProof
+        products, currency, delivery_fee, search, setSearch, showSearch, setShowSearch, cartItems, setCartItems, addToCart, getCartCount, updateQuantity, getCartAmount, handlePlaceOrder, paymentProof, setPaymentProof, navigate, deliveryInfo, setDeliveryInfo
     }
 
     return (
