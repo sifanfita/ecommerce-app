@@ -2,11 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import connectDB from './config/mongodb.js';
+import connectCloudinary from './config/cloudinary.js';
 
 // App Config
 const app = express(); // Initialize Express app(instance of express server)
 const port = process.env.PORT || 9000; // Define the port
 connectDB()
+connectCloudinary()
 
 // Middlewares
 app.use(express.json()); // Middleware to parse JSON bodies(requests will be passed using json)
