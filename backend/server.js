@@ -3,6 +3,7 @@ import cors from 'cors';
 import 'dotenv/config';
 import connectDB from './config/mongodb.js';
 import connectCloudinary from './config/cloudinary.js';
+import userRouter from './routes/userRoute.js';
 
 // App Config
 const app = express(); // Initialize Express app(instance of express server)
@@ -15,6 +16,7 @@ app.use(express.json()); // Middleware to parse JSON bodies(requests will be pas
 app.use(cors()); // Middleware to enable CORS (Cross-Origin Resource Sharing or we can access the backend from any IP address)
 
 // api endpoints
+app.use('/api/user', userRouter)
 app.get('/', (req, res) => {
     res.send("API is running...");
 })
