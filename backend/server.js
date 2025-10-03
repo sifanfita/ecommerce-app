@@ -4,6 +4,7 @@ import 'dotenv/config';
 import connectDB from './config/mongodb.js';
 import connectCloudinary from './config/cloudinary.js';
 import userRouter from './routes/userRoute.js';
+import productRouter from './routes/productRoute.js';
 
 // App Config
 const app = express(); // Initialize Express app(instance of express server)
@@ -17,6 +18,7 @@ app.use(cors()); // Middleware to enable CORS (Cross-Origin Resource Sharing or 
 
 // api endpoints
 app.use('/api/user', userRouter)
+app.use('/api/product', productRouter)
 app.get('/', (req, res) => {
     res.send("API is running...");
 })
