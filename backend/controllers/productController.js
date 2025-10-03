@@ -92,6 +92,26 @@ const listProducts = async (req, res) => {
 // function for get single product
 const singleProduct = async (req, res) => {
 
+    try {
+
+        const { id } = req.body;
+        const product = await productModel.findById(id);
+        res.json({
+            success: true,
+            data: product
+        });
+
+        
+    } catch (error) {
+        console.log(error);
+        res.json({
+            success: false,
+            message: error.message
+        });
+    }
+
+
+
 }
 
 // function for remove product
