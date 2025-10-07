@@ -14,11 +14,11 @@ import Orders from "./pages/Orders";
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const App = () => {
-  const [token, setToken] = useState(localStorage.getItem("token") ? localStorage.getItem("token") : "");
+  const [token, setToken] = useState(sessionStorage.getItem("token") ? sessionStorage.getItem("token") : "");
 
   useEffect(() => {
 
-    localStorage.setItem("token", token);
+    sessionStorage.setItem("token", token);
 
   }, [token]);
 
