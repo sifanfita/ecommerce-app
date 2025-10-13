@@ -1,7 +1,8 @@
 import { createContext, useEffect, useState } from "react";
-import { products } from "../assets/assets";
+import axios from 'axios'
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+
 
 
 export const ShopContext = createContext();
@@ -9,11 +10,14 @@ export const ShopContext = createContext();
 const ShopContextProvider = (props) => { 
     const currency = 'ETB';
     const delivery_fee = 100;
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
     const [search, setSearch] = useState('');
     const [showSearch, setShowSearch] = useState(false);
     const [cartItems, setCartItems] = useState({});
     const [paymentProof, setPaymentProof] = useState(null);
+    const [products, setProducts] = useState([]);
     const navigate = useNavigate();
+    const [token, setToken] = useState('');
     
     const [deliveryInfo, setDeliveryInfo] = useState({
     firstName: "",
@@ -139,8 +143,43 @@ const ShopContextProvider = (props) => {
     
   };
 
+  const getProducstData = async () => {
+
+    try {
+
+        const response = await axios.get(backendUrl + '/api/product/list')
+        if (response.data.success) {
+            setProducts(response.data.products);
+            
+        }
+        else{
+            toast.error(response.data.message);
+        }
+
+
+        
+        
+
+        
+    } catch (error) {
+        console.log(error);
+        toast.error(error.message);
+        
+    }
+
+  }
+  useEffect(() => {
+    getProducstData()
+  }, [])
+
+  useEffect(() => {
+    if (!token && sessionStorage.getItem('token')) {
+        sessionStorage.setItem('token', token);
+    }
+  }, []);
+
     const value = {
-        products, currency, delivery_fee, search, setSearch, showSearch, setShowSearch, cartItems, setCartItems, addToCart, getCartCount, updateQuantity, getCartAmount, handlePlaceOrder, paymentProof, setPaymentProof, navigate, deliveryInfo, setDeliveryInfo
+         products, currency, delivery_fee, search, setSearch, showSearch, setShowSearch, cartItems, setCartItems, addToCart, getCartCount, updateQuantity, getCartAmount, handlePlaceOrder, paymentProof, setPaymentProof, navigate, deliveryInfo, setDeliveryInfo, backendUrl, token, setToken
     }
 
     return (

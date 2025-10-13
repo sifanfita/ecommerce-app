@@ -7,8 +7,9 @@ const LatestCollection = () => {
     const { products } = useContext(ShopContext);
     const [lastestProducts, setLatestProducts] = useState([]);
     useEffect(()=>{
+        if (!Array.isArray(products) || products.length === 0) return;
         setLatestProducts(products.slice(0,10));
-    }, [])
+    }, [products])
     
   return (
     <div className='my-10'>

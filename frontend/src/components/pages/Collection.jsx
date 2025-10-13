@@ -23,6 +23,7 @@ function Collection() {
   }
 
   const applyFilter = () => {
+    if (!Array.isArray(products) || products.length === 0) return;
     let productsCopy = products.slice();
     if (showSearch && search){
       productsCopy = productsCopy.filter(item => item.name.toLowerCase().includes(search.toLowerCase()));
@@ -61,7 +62,7 @@ function Collection() {
   useEffect(() =>{
     applyFilter();
 
-  }, [category, search, showSearch] )
+  }, [category, search, showSearch, products] )
 
   useEffect(()=>{
     sortProduct();
