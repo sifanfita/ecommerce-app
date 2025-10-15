@@ -6,6 +6,7 @@ import connectCloudinary from './config/cloudinary.js';
 import userRouter from './routes/userRoute.js';
 import productRouter from './routes/productRoute.js';
 import cartRouter from './routes/cartRoute.js';
+import orderRouter from './routes/orderRoute.js';
 
 // App Config
 const app = express(); // Initialize Express app(instance of express server)
@@ -16,11 +17,14 @@ connectCloudinary()
 // Middlewares
 app.use(express.json()); // Middleware to parse JSON bodies(requests will be passed using json)
 app.use(cors()); // Middleware to enable CORS (Cross-Origin Resource Sharing or we can access the backend from any IP address)
+app.use("/uploads", express.static("uploads"));
+
 
 // api endpoints
 app.use('/api/user', userRouter)
 app.use('/api/product', productRouter)
 app.use('/api/cart', cartRouter)
+app.use('/api/order', orderRouter)
 app.get('/', (req, res) => {
     res.send("API is running...");
 })
