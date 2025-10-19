@@ -12,7 +12,7 @@ orderRouter.post('/list', adminAuth, allOrders);
 orderRouter.post('/status', adminAuth, updateOrderStatus);
 
 //payment features
-orderRouter.post("/place", upload.single("paymentProof"), placeOrder);
+orderRouter.post("/place", upload.single("paymentProof"), authUser, placeOrder);
 
 // User features
 orderRouter.post('/userorders', authUser, userOrders);

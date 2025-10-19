@@ -2,48 +2,85 @@ import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import { v2 as cloudinary } from "cloudinary";
 // All orders data for admin panel
-const allOrders = async (req, res) => {};
+const allOrders = async (req, res) => {
+  try {
+
+    const orders = await orderModel.find({}).sort({ date: -1 });
+    res.json({
+      success: true,
+      orders,
+    });
+
+    
+  } catch (error) {
+    console.log(error);
+    res.json({
+      success: false,
+      message: "Error fetching all orders",
+      error: error.message,
+    });
+  }
+};
 
 // Get orders of a single user
 const userOrders = async (req, res) => {
-    try {
+  try {
+    const userId = req.body.userId; // comes from authUser middleware
 
-        const { userId } = req.body;
-        const orders = await orderModel.find({ userId }).sort({ date: -1 });
-        return res.json({
-            success: true,
-    
-            data: orders
-        })
-
-
-        
-    } catch (error) {
-        console.log(error);
-        return res.json({
-            success: false,
-            message: "Error fetching user orders",
-            error: error.message
-        })
-
-
-
-        
+    if (!userId) {
+      return res.json({
+        success: false,
+        message: "User ID not found in request (auth failed)",
+      });
     }
+
+    const orders = await orderModel.find({ userId }).sort({ date: -1 });
+
+    return res.json({
+      success: true,
+     orders,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.json({
+      success: false,
+      message: "Error fetching user orders",
+      error: error.message,
+    });
+  }
 };
 
+
 // update order status (admin)
-const updateOrderStatus = async (req, res) => {};
+const updateOrderStatus = async (req, res) => {
+
+  try {
+    const { orderId, status } = req.body;
+    await orderModel.findByIdAndUpdate(orderId, { status });
+    return res.json({
+      success: true,
+      message: "Order status updated"
+    })
+    
+  } catch (error) {
+    console.log(error);
+    return res.json({
+      success: false,
+      message: "Error updating order status",
+      error: error.message
+    })
+    
+  }
+};
 
 // place order (user)
-
 const placeOrder = async (req, res) => {
   try {
-    const { userId, amount } = req.body;
+    const userId = req.body.userId; // added by authUser middleware
     const items = JSON.parse(req.body.items);
     const address = JSON.parse(req.body.address);
+    const amount = req.body.amount;
 
-    // check for file
     const paymentProofFile = req.file;
     if (!paymentProofFile) {
       return res.json({
@@ -52,18 +89,13 @@ const placeOrder = async (req, res) => {
       });
     }
 
-    // upload to Cloudinary
-    const uploadResult = await cloudinary.uploader.upload(
-      paymentProofFile.path,
-      {
-        resource_type: "image",
-        folder: "paymentProofs",
-      }
-    );
+    const uploadResult = await cloudinary.uploader.upload(paymentProofFile.path, {
+      resource_type: "image",
+      folder: "paymentProofs",
+    });
 
     const paymentProofUrl = uploadResult.secure_url;
 
-    // build order data
     const orderData = {
       userId,
       items,
