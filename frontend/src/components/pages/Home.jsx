@@ -3,7 +3,7 @@ import Hero from '../Hero'
 import LatestCollection from '../LatestCollection'
 import BestSeller from '../BestSeller'
 import OurPolicy from '../OurPolicy'
-import NewsLetterBox from '../NewsLetterBox'
+
 
 function Home() {
   return (
@@ -12,7 +12,7 @@ function Home() {
       <LatestCollection/>
       <BestSeller/>
       <OurPolicy/>
-      <NewsLetterBox/>
+      
     </div>
   )
 }

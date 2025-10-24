@@ -1,7 +1,7 @@
 import React from 'react'
 import Title from '../Title'
 import { assets } from '../../assets/assets'
-import NewsletterBox from '../NewsletterBox'
+
 
 function About() {
   return (              
@@ -40,7 +40,7 @@ function About() {
         </div>
 
       </div>
-      <NewsletterBox/>
+      
       
     </div> 
   )        
