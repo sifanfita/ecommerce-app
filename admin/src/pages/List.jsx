@@ -1,76 +1,131 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { backendUrl, currency } from '../App';
 import { toast } from 'react-toastify';
 
-const List = ({token}) => {
+import { MaterialReactTable } from 'material-react-table';
+import { Box, TextField } from '@mui/material';
+
+const List = ({ token }) => {
   const [list, setList] = useState([]);
 
   const fetchList = async () => {
     try {
       const response = await axios.get(backendUrl + "/api/product/list");
       if (response.data.success) {
-        setList(response.data.data); // changed to 'data' as per backend
+        setList(response.data.data);
       } else {
         toast.error(response.data.message);
       }
     } catch (error) {
-      console.log(error); // fixed typo
       toast.error(error.message);
     }
-  }
+  };
 
-  const removeProduct = async (id) => {
+  const updateStock = async (productId, color, size, newStock) => {
     try {
-      const response = await axios.delete(backendUrl + "/api/product/remove", {
-  headers: { token },
-  data: { id }
-});
+      const response = await axios.put(
+        backendUrl + "/api/product/updateStock",
+        { productId, color, size, stock: newStock },
+        { headers: { token } }
+      );
 
       if (response.data.success) {
-        toast.success(response.data.message);
-        await fetchList();
+        toast.success("Stock updated");
+        fetchList();
       } else {
         toast.error(response.data.message);
       }
     } catch (error) {
-      console.log(error);
       toast.error(error.message);
     }
-  }
-
-  // Removed invalid useEffect block that caused syntax errors.
+  };
 
   useEffect(() => {
     fetchList();
   }, []);
 
-  return (
-    <>
-      <p className='mb-2'>All Products List</p>
-      <div className='flex flex-col gap-2'>
-        {/* List Table Title */}
-        <div className='hidden md:grid grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center py-1 px-2 border bg-gray-100 text-sm'>
-          <b>Image</b>
-          <b>Name</b>
-          <b>Category</b>
-          <b>Price</b>
-          <b className='text-center'>Action</b>
-        </div>
-
-        {/* Product List */}
-        {list.map((item, index) => (
-          <div key={index} className='grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center py-1 px-2 border text-sm'>
-            <img src={item.image[0]} alt={item.name} className='w-12' />
-            <p>{item.name}</p>
-            <p>{item.category}</p>
-            <p>{currency} {item.price}</p>
-            <p onClick={() => removeProduct(item._id)} className='text-right md:text-center cursor-pointer text-lg'>X</p>
-          </div>
-        ))}
-      </div>
-    </>
+  // Define columns
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: 'image',
+        header: 'Image',
+        enableColumnFilter: false,   // 🔥 Disable filter UI
+        enableFilterMatchHighlighting: false,
+        Cell: ({ row }) => (
+          <img
+            src={row.original.image[0]}
+            alt=""
+            style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover' }}
+          />
+        ),
+        size: 80,
+      },
+      { accessorKey: 'name', header: 'Name', size: 180 },
+      { accessorKey: 'category', header: 'Category', size: 120 },
+      {
+        accessorKey: 'price',
+        header: 'Price',
+        Cell: ({ cell }) => currency + cell.getValue(),
+        size: 80,
+      },
+    ],
+    []
   );
-}
+
+  return (
+    <MaterialReactTable
+      columns={columns}
+      data={list}
+      enableSorting
+      enableColumnFilters
+      enablePagination
+      enableBottomToolbar
+      enableTopToolbar
+      initialState={{ pagination: { pageSize: 10 } }}
+      enableExpandAll={false}
+      enableExpanding
+
+      // DETAIL PANEL FOR STOCK MANAGEMENT
+      renderDetailPanel={({ row }) => (
+        <Box sx={{ padding: "16px", background: "#fafafa", borderRadius: 2 }}>
+          <h3>Stock Management</h3>
+
+          {row.original.colors?.map((colorObj, idx) => (
+            <Box key={idx} sx={{ marginBottom: "16px" }}>
+              <strong>{colorObj.color}</strong>
+
+              {colorObj.sizes.map((sizeObj, sIndex) => (
+                <Box
+                  key={sIndex}
+                  sx={{ display: "flex", gap: 2, alignItems: "center", marginTop: "8px", paddingLeft: "12px" }}
+                >
+                  <span>{sizeObj.size}</span>
+
+                  <TextField
+                    type="number"
+                    size="small"
+                    label="Stock"
+                    value={sizeObj.stock}
+                    onChange={(e) =>
+                      updateStock(
+                        row.original._id,
+                        colorObj.color,
+                        sizeObj.size,
+                        Number(e.target.value)
+                      )
+                    }
+                    sx={{ width: "90px" }}
+                  />
+                </Box>
+              ))}
+            </Box>
+          ))}
+        </Box>
+      )}
+    />
+  );
+};
 
 export default List;

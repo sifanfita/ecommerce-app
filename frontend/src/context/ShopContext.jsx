@@ -139,6 +139,9 @@ const ShopContextProvider = (props) => {
 
     try {
 
+      
+    
+
       const fullItems = productstData.map((item) => {
         const productInfo = products.find((p) => p._id === item._id);
         return {
@@ -156,7 +159,14 @@ const ShopContextProvider = (props) => {
         "amount",
         getCartAmount() + (productstData.length > 0 ? delivery_fee : 0)
       );
-      formData.append("address", JSON.stringify(deliveryInfo));
+      // **Here we create full name and append the address**
+    const fullName = `${deliveryInfo.firstName} ${deliveryInfo.lastName}`;
+    const orderAddress = {
+      ...deliveryInfo,
+      name: fullName, // include full name
+    };
+    delete orderAddress.zip; // remove zip if exists
+      formData.append("address", JSON.stringify(orderAddress));
       
 
       formData.append("items", JSON.stringify(fullItems));

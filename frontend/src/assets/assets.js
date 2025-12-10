@@ -30,6 +30,8 @@ import star from './star.png';
 import starDull from './star-dull.png';
 import aboutImage from './about-img.jpg';
 import ContactImage from './contact-img.jpg';
+import heroImage2 from './heroimage2.jpeg';
+import heroImage3 from './heroimage3.webp';
 
 export const assets = {
   crossIcon,
@@ -64,6 +66,8 @@ export const assets = {
     starDull,
     aboutImage,
     ContactImage,
+    heroImage2,
+    heroImage3,
 };
 
 export const products = [
