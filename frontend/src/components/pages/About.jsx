@@ -12,10 +12,14 @@ function About() {
       <div className='my-10 flex flex-col md:flex-row gap-16'>
         <img className='w-full md:max-w-[450px]' src={assets.aboutImage} alt="" />
         <div className='flex flex-col justify-center gap-6 md:w-2/4 text-gray-600'>
-        <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Numquam vitae ducimus corporis at autem quibusdam reprehenderit, error iste atque officia perferendis, fugiat vel, eius quisquam ullam omnis eligendi doloremque dolor?</p>
-        <p>Lorem ipsum, dolor sit amet consectetur adipisicing elit. Vel temporibus, eaque animi sequi consequatur iste autem odio cumque corrupti ipsum molestias nulla distinctio, possimus rem impedit unde numquam quaerat cum?</p>
+        <p>At Dinko, we believe clothes should do more than just cover you — they should reflect who you are.
+We started with one goal: to build a brand that delivers premium quality, sharp design, and real value — without the nonsense.
+We’re not here to follow trends. We’re here to set the standard. Every piece is carefully selected, from the fabric to the fit, so you look good, feel great, and stay comfortable all day long.
+We’re a team of men who live what we sell — guys who value style, durability, and getting it right the first time.
+That’s Dinko. No hype. Just clothes that work as hard as you do.</p>
         <b className='text-gray-800'>Our Mission</b>
-        <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Nesciunt reiciendis facilis, fuga saepe beatae sapiente. Incidunt, aspernatur dolores, reprehenderit aliquam ratione hic, nesciunt doloribus quia voluptatem eligendi suscipit consequatur laudantium?</p>
+        <p>To make every man feel confident, sharp, and unstoppable — one wardrobe upgrade at a time.
+We’re committed to delivering timeless style, unbeatable quality, and hassle-free shopping, so you can focus on what matters most: living your life on your terms.</p>
         </div>
       </div>
 
@@ -28,15 +32,15 @@ function About() {
       <div className='flex flex-col md:flex-row text-sm mb-20'>
         <div className='border px-10 md:px-16 py-8 sm:py-20 flex flex-col gap-5'>
           <b>Quality Assurance:</b>
-          <p className='text-gray-600'>Lorem ipsum dolor sit amet consectetur adipisicing elit. A quis facere maxime magni. Harum numquam et odit ipsum expedita dolorum atque nemo molestiae sit? Ad optio ipsam animi suscipit iste!</p>
+          <p className='text-gray-600'>We don’t cut corners. Every piece is crafted with premium fabrics and meticulous attention to detail — built to last, not just to look good today.</p>
         </div>
         <div className='border px-10 md:px-16 py-8 sm:py-20 flex flex-col gap-5'>
           <b>Convenience:</b>
-          <p className='text-gray-600'>Lorem ipsum dolor sit amet consectetur adipisicing elit. A quis facere maxime magni. Harum numquam et odit ipsum expedita dolorum atque nemo molestiae sit? Ad optio ipsam animi suscipit iste!</p>
+          <p className='text-gray-600'>Shop on your time. Fast shipping, easy returns, and a seamless experience from cart to doorstep. No stress, just style.</p>
         </div>
         <div className='border px-10 md:px-16 py-8 sm:py-20 flex flex-col gap-5'>
           <b>Exceptional Customer Service:</b>
-          <p className='text-gray-600'>Lorem ipsum dolor sit amet consectetur adipisicing elit. A quis facere maxime magni. Harum numquam et odit ipsum expedita dolorum atque nemo molestiae sit? Ad optio ipsam animi suscipit iste!</p>
+          <p className='text-gray-600'>We’re here for you 24/7. Real people, real help — whether it’s sizing advice or tracking your order. You’re never just another customer.</p>
         </div>
 
       </div>

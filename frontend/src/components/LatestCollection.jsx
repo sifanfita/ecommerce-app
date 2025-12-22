@@ -15,7 +15,7 @@ const LatestCollection = () => {
     <div className='my-10'>
         <div className='text-center py-8 text-3xl'>
             <Title text1={'LATEST'} text2={'COLLECTIONS'}/>
-            <b>Bold Style, Real Quality</b>
+            <p className='text-gray-700 font-medium'>Bold Style, Real Quality</p>
             <p className='w-3/4 m-auto text-xs sm:text-sm md:text-base text-gray-600'>
 Discover the latest collections curated just for men who know what they want. From sharp coats and premium tees to standout accessories — everything you need to own your look.
 Shop now and step up your game.</p>
