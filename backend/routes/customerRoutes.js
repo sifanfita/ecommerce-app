@@ -1,12 +1,14 @@
 import express from "express";
 import User from "../models/userModel.js"; // adjust path if needed
 import Order from "../models/orderModel.js"; // optional, if you want order counts
-import  adminAuth  from "../middleware/adminAuth.js"; // your admin auth middleware
+import  adminOrShopkeeper  from "../middleware/adminOrShopkeeper.js"; // your admin auth middleware
+import authMiddleware from "../middleware/authMiddleware.js";
 
-const router = express.Router();
+const customerRouter = express.Router();
 
-router.get("/", adminAuth, async (req, res) => {
+customerRouter.get("/", authMiddleware, adminOrShopkeeper, async (req, res) => {
   try {
+
     const users = await User.find({}, "-password"); // exclude password
 
     const customers = await Promise.all(
@@ -42,4 +44,4 @@ router.get("/", adminAuth, async (req, res) => {
 });
 
 
-export default router;
+export default customerRouter;

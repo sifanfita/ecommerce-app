@@ -5,18 +5,19 @@ import {
   placeOrder,
   updateOrderStatus,
 } from "../controllers/orderController.js";
-import adminAuth from "../middleware/adminAuth.js";
-import authUser from "../middleware/auth.js";
+import adminOnly from "../middleware/adminOnly.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 import upload from "../middleware/multer.js";
+import adminOrShopkeeper from "../middleware/adminOrShopkeeper.js";
 
 const orderRouter = express.Router();
 
 // Admin routes
-orderRouter.post("/list", adminAuth, allOrders); // GET for admin
-orderRouter.post("/status", adminAuth, updateOrderStatus);
+orderRouter.post("/list", authMiddleware, adminOrShopkeeper, allOrders); // GET for admin
+orderRouter.post("/status", authMiddleware, adminOrShopkeeper, updateOrderStatus);
 
 // User routes
-orderRouter.post("/place", upload.single("paymentProof"), authUser, placeOrder);
-orderRouter.post("/userorders", authUser, userOrders);
+orderRouter.post("/place", upload.single("paymentProof"), authMiddleware, placeOrder);
+orderRouter.post("/userorders", authMiddleware, userOrders);
 
 export default orderRouter;

@@ -27,7 +27,7 @@ const allOrders = async (req, res) => {
 // =======================
 const userOrders = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const  userId  = req.user._id;
 
     if (!userId) {
       return res.json({
@@ -78,7 +78,7 @@ const updateOrderStatus = async (req, res) => {
 // =======================
 const placeOrder = async (req, res) => {
   try {
-    const userId = req.body.userId;
+    const userId = req.user._id;
     const items = JSON.parse(req.body.items);
     const address = JSON.parse(req.body.address);
     const amount = req.body.amount;
@@ -126,7 +126,7 @@ const placeOrder = async (req, res) => {
     console.log(error);
     res.json({
       success: false,
-      message: "Error placing order",
+      message: error.message,
     });
   }
 };

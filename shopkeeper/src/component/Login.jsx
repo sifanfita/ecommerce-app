@@ -10,7 +10,7 @@ const Login = ({ setToken }) => {
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(backendUrl + '/api/user/admin/login', {
+      const response = await axios.post(backendUrl + '/api/user/shopkeeper/login', {
         email,
         password,
       });
@@ -32,7 +32,7 @@ const Login = ({ setToken }) => {
   return (
     <div className="min-h-screen flex items-center justify-center w-full bg-gray-100">
       <div className="bg-white shadow-xl rounded-xl px-8 py-10 max-w-md w-full">
-        <h1 className="text-3xl font-bold mb-6 text-center">Admin Login</h1>
+        <h1 className="text-3xl font-bold mb-6 text-center">Shopkeeper Login</h1>
 
         {/* Hidden fields to trick browser autofill */}
         <input type="text" name="fake-email" style={{ display: 'none' }} autoComplete="off" />

@@ -12,7 +12,6 @@ import Orders from "./pages/Orders";
 import Home from "./component/Home";
 import Customers from "./pages/Customers";
 
-import AdminShopkeepers from "./pages/AdminShopkeepers";
 
 
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -46,8 +45,6 @@ const App = () => {
                 <Route path="/orders" element={<Orders token={token} />} />
                 <Route path="/customers" element={<Customers token={token} />} />
                 
-                <Route path="/admin/shopkeepers" element={<AdminShopkeepers token={token} />} />
-
                 
               </Routes>
             </div>

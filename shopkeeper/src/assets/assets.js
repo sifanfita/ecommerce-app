@@ -4,7 +4,6 @@ import order_icon from './order_icon.png'
 import upload_area from './upload_area.png'
 import parcel_icon from './parcel_icon.svg'
 import customers_icon from './customers_icon.jpg'
-import shopkeeper_icon from './shopkeeper.png'
 
 export const assets = {
     logo,
@@ -12,7 +11,6 @@ export const assets = {
     order_icon,
     upload_area,
     parcel_icon,
-    customers_icon,
-    shopkeeper_icon
+    customers_icon
 }
 
