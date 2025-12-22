@@ -15,8 +15,7 @@ function About() {
         <p>At Dinko, we believe clothes should do more than just cover you — they should reflect who you are.
 We started with one goal: to build a brand that delivers premium quality, sharp design, and real value — without the nonsense.
 We’re not here to follow trends. We’re here to set the standard. Every piece is carefully selected, from the fabric to the fit, so you look good, feel great, and stay comfortable all day long.
-We’re a team of men who live what we sell — guys who value style, durability, and getting it right the first time.
-That’s Dinko. No hype. Just clothes that work as hard as you do.</p>
+</p>
         <b className='text-gray-800'>Our Mission</b>
         <p>To make every man feel confident, sharp, and unstoppable — one wardrobe upgrade at a time.
 We’re committed to delivering timeless style, unbeatable quality, and hassle-free shopping, so you can focus on what matters most: living your life on your terms.</p>
