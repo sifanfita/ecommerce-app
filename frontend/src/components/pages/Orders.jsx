@@ -7,10 +7,13 @@ import { toast } from 'react-toastify';
 function Orders() {
   const { backendUrl, token, currency, products } = useContext(ShopContext);
   const [orderData, setOrderData] = useState([]);
+  const [loading, setLoading] = useState(false);   // 👈 NEW
 
   const loadOrderData = async () => {
     try {
       if (!token) return;
+
+      setLoading(true);   // 👈 start loading
 
       const response = await axios.post(
         backendUrl + '/api/order/userorders',
@@ -20,9 +23,9 @@ function Orders() {
 
       if (response.data.success) {
         let allOrdersItem = [];
+
         response.data.orders.forEach((order) => {
           order.items.forEach((item) => {
-            // find matching product from products list
             const productInfo = products.find((p) => p._id === item.itemId);
 
             allOrdersItem.push({
@@ -44,6 +47,8 @@ function Orders() {
     } catch (error) {
       console.error("Error loading order data:", error);
       toast.error("Error loading orders");
+    } finally {
+      setLoading(false);   // 👈 stop loading always
     }
   };
 
@@ -58,7 +63,9 @@ function Orders() {
       </div>
 
       <div>
-        {orderData.length > 0 ? (
+        {loading ? (
+          <p className="text-gray-400 py-6 text-center">Loading orders...</p>
+        ) : orderData.length > 0 ? (
           orderData.slice(0, 4).map((item, index) => (
             <div
               key={index}
@@ -87,6 +94,7 @@ function Orders() {
                   </p>
                 </div>
               </div>
+
               <div className="md:w-1/2 flex justify-between">
                 <div className="flex items-center gap-2">
                   <p className="min-w-2 h-2 rounded-full bg-green-500"></p>
@@ -94,8 +102,15 @@ function Orders() {
                     {item.status || "Processing"}
                   </p>
                 </div>
-                <button onClick={loadOrderData} className="border px-4 py-2 text-sm font-medium rounded-sm">
-                  Track Order
+
+                <button
+                  onClick={loadOrderData}
+                  disabled={loading}
+                  className={`border px-4 py-2 text-sm font-medium rounded-sm ${
+                    loading ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  Refresh
                 </button>
               </div>
             </div>

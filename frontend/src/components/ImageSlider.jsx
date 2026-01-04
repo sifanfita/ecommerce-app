@@ -1,51 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const ImageSlider = ({ images }) => {
-  const [index, setIndex] = useState(0);
-  const [fade, setFade] = useState(true);
+const ImageSlider = ({ images, interval = 3000 }) => {
+  const [current, setCurrent] = useState(0);
 
-  const next = () => {
-    setFade(false); // start fade out
-    setTimeout(() => {
-      setIndex((prev) => (prev + 1) % images.length);
-      setFade(true); // fade in new image
-    }, 300); // match transition duration
-  };
+  useEffect(() => {
+    const slider = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % images.length);
+    }, interval);
 
-  const prev = () => {
-    setFade(false);
-    setTimeout(() => {
-      setIndex((prev) => (prev - 1 + images.length) % images.length);
-      setFade(true);
-    }, 300);
-  };
+    return () => clearInterval(slider);
+  }, [images.length, interval]);
+
+  if (!images || images.length === 0) return null;
 
   return (
-    <div className="relative w-full h-full">
-      {/* Image */}
-      <img
-        src={images[index]}
-        alt="slide"
-        className={`w-full h-64 sm:h-80 md:h-96 object-cover transition-opacity duration-300 ${
-          fade ? "opacity-100" : "opacity-0"
-        }`}
-      />
+    <div className="relative w-full h-full overflow-hidden rounded-lg">
+      {images.map((img, index) => (
+        <img
+          key={index}
+          src={img}
+          alt={`slide-${index}`}
+          className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
+            index === current ? "opacity-100 z-10" : "opacity-0 z-0"
+          }`}
+        />
+      ))}
 
-      {/* Left arrow */}
-      <button
-        onClick={prev}
-        className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 text-white px-2 py-1 rounded-full"
-      >
-        ‹
-      </button>
-
-      {/* Right arrow */}
-      <button
-        onClick={next}
-        className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 text-white px-2 py-1 rounded-full"
-      >
-        ›
-      </button>
+      {/* Navigation dots */}
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+        {images.map((_, idx) => (
+          <span
+            key={idx}
+            className={`w-3 h-3 rounded-full cursor-pointer ${
+              idx === current ? "bg-white" : "bg-white/50"
+            }`}
+            onClick={() => setCurrent(idx)}
+          ></span>
+        ))}
+      </div>
     </div>
   );
 };

@@ -4,34 +4,50 @@ import Title from './Title'
 import ProductItem from './ProductItem'
 
 const BestSeller = () => {
-    const { products} = useContext(ShopContext);
-    const [bestSeller, setBestSeller] = useState([]);
+  const { products } = useContext(ShopContext)
 
-    useEffect(() => {
-        if (!Array.isArray(products) || products.length === 0) return; 
-        const bestProduct = products.filter((item) => (item.bestSeller));
-        setBestSeller(bestProduct.slice(0,5))
-    }, [products])
+  const [bestSeller, setBestSeller] = useState([])
+  const [loading, setLoading] = useState(true)   // 👈 NEW
+
+  useEffect(() => {
+    if (!Array.isArray(products) || products.length === 0) {
+      setLoading(true)
+      return
+    }
+
+    const bestProduct = products.filter(item => item.bestSeller)
+    setBestSeller(bestProduct.slice(0, 5))
+    setLoading(false)
+  }, [products])
+
   return (
     <div className='my-10'>
-        <div className='text-center py-8 text-3xl'>
-            <Title text1={'BEST'} text2={'SELLER'}/>
-            <p className='w-3/4 m-auto text-xs sm:text-sm md:text-base text-gray-600'>The pieces every guy is wearing right now.
-Proven favorites. Proven style.</p>
-        </div>
+      <div className='text-center py-8 text-3xl'>
+        <Title text1={'BEST'} text2={'SELLER'} />
+        <p className='w-3/4 m-auto text-xs sm:text-sm md:text-base text-gray-600'>
+          The pieces every guy is wearing right now. Proven favorites. Proven style.
+        </p>
+      </div>
 
-        {/*rendering products */}
+      {loading ? (
+        <div className="text-center text-gray-400 py-10">
+          Loading best sellers...
+        </div>
+      ) : (
         <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 gap-y-6'>
-            {bestSeller.map((item, index) => (
-                <ProductItem key={index} id={item._id} image={item.image[0]} name={item.name} price={item.price}/>
-            ))}
+          {bestSeller.map((item, index) => (
+            <ProductItem
+              key={index}
+              id={item._id}
+              image={item.image[0]}
+              name={item.name}
+              price={item.price}
+            />
+          ))}
         </div>
-
-
+      )}
     </div>
   )
 }
 
-export default BestSeller  
-
-
+export default BestSeller

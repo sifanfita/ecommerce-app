@@ -1,86 +1,159 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import Title from '../Title';
 import CartTotal from '../CartTotal';
 import { ShopContext } from '../../context/ShopContext';
-import { useState } from 'react';
 
 function PlaceOrder() {
-  const { paymentProof, setPaymentProof, cartItems, products, getCartAmount, currency, handlePlaceOrder, deliveryInfo, setDeliveryInfo, navigate } = useContext(ShopContext);
+  const {
+    paymentProof,
+    setPaymentProof,
+    handlePlaceOrder,
+    deliveryInfo,
+    setDeliveryInfo
+  } = useContext(ShopContext);
 
-  
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const requiredFields = ['firstName', 'lastName', 'email', 'street', 'city', 'state', 'phone'];
 
   const handleChange = (e) => {
-    setDeliveryInfo({
-      ...deliveryInfo,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setDeliveryInfo({ ...deliveryInfo, [name]: value });
+
+    // Live validation
+    if (!value.trim()) {
+      setErrors(prev => ({ ...prev, [name]: 'This field is required' }));
+    } else {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
+  const validate = () => {
+    let newErrors = {};
+
+    requiredFields.forEach(field => {
+      if (!deliveryInfo[field]?.trim()) {
+        newErrors[field] = 'This field is required';
+      }
+    });
+
+    if (!paymentProof) {
+      newErrors.paymentProof = 'Payment proof is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validate()) return;
+
+    try {
+      setLoading(true);
+      await handlePlaceOrder();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inputClass = (name) =>
+    `border rounded py-1.5 px-3.5 w-full ${
+      errors[name] ? 'border-red-500' : 'border-gray-300'
+    }`;
 
   return (
-    <form onSubmit={(e) => {
-    e.preventDefault();
-    handlePlaceOrder();
-  }} className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-t">
-      {/* Left Side - Shipping Details */}
+    <form
+      onSubmit={onSubmit}
+      className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh]"
+    >
       <div className="flex flex-col gap-4 w-full sm:max-w-[480px]">
+
         <div className="text-xl sm:text-2xl my-3">
           <Title text1="DELIVERY" text2="INFORMATION" />
         </div>
 
         <div className="flex gap-3">
-          <input name='firstName' value={deliveryInfo.firstName} onChange={handleChange} className="border border-gray-300 rounded py-1.5 px-3.5 w-full" type="text" placeholder="First Name" />
-          <input name='lastName' value={deliveryInfo.lastName} onChange={handleChange} className="border border-gray-300 rounded py-1.5 px-3.5 w-full" type="text" placeholder="Last Name" />
+          <div className="w-full">
+            <input name="firstName" value={deliveryInfo.firstName} onChange={handleChange}
+              className={inputClass('firstName')} placeholder="First Name" disabled={loading} />
+            {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName}</p>}
+          </div>
+
+          <div className="w-full">
+            <input name="lastName" value={deliveryInfo.lastName} onChange={handleChange}
+              className={inputClass('lastName')} placeholder="Last Name" disabled={loading} />
+            {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName}</p>}
+          </div>
         </div>
 
-        <input name='email' value={deliveryInfo.email} onChange={handleChange} className="border border-gray-300 rounded py-1.5 px-3.5 w-full" type="email" placeholder="Email Address" />
-        <input name='street' value={deliveryInfo.street} onChange={handleChange} className="border border-gray-300 rounded py-1.5 px-3.5 w-full" type="text" placeholder="Street" />
+        {['email','street','phone'].map(field => (
+          <div key={field}>
+            <input
+              name={field}
+              value={deliveryInfo[field]}
+              onChange={handleChange}
+              className={inputClass(field)}
+              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              disabled={loading}
+            />
+            {errors[field] && <p className="text-red-500 text-xs">{errors[field]}</p>}
+          </div>
+        ))}
 
         <div className="flex gap-3">
-          <input name='city' value={deliveryInfo.city} onChange={handleChange} className="border border-gray-300 rounded py-1.5 px-3.5 w-full" type="text" placeholder="City" />
-          <input name='state' value={deliveryInfo.state} onChange={handleChange} className="border border-gray-300 rounded py-1.5 px-3.5 w-full" type="text" placeholder="State" />
+          {['city','state'].map(field => (
+            <div className="w-full" key={field}>
+              <input
+                name={field}
+                value={deliveryInfo[field]}
+                onChange={handleChange}
+                className={inputClass(field)}
+                placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                disabled={loading}
+              />
+              {errors[field] && <p className="text-red-500 text-xs">{errors[field]}</p>}
+            </div>
+          ))}
         </div>
 
-        <div className="flex gap-3">
-          <input name='phone' value={deliveryInfo.phone} onChange={handleChange} className="border border-gray-300 rounded py-1.5 px-3.5 w-full" type="tel" placeholder="Phone Number" />
-        </div>
-
-        {/* Right side - Payment Details */}
         <div className="mt-8 min-w-80">
           <CartTotal />
         </div>
 
         <div className="mt-12">
           <Title text1="PAYMENT" text2="METHOD" />
-          {/* Bank Accounts */}
-          <div className="mb-6 text-sm text-gray-700 space-y-2">
-            <p><b>Commercial Bank of Ethiopia (CBE):</b> 10001122334455</p>
-            <p><b>Awash Bank:</b> 20002233445566</p>
-            <p><b>Bank of Abyssinia:</b> 30003344556677</p>
-            <p><b>Cooperative Bank of Oromia:</b> 40004455667788</p>
-          </div>
 
+          <div className="mb-6 text-sm text-gray-700 space-y-2">
+            <p><b>CBE:</b> 10001122334455</p>
+            <p><b>Awash:</b> 20002233445566</p>
+            <p><b>Abyssinia:</b> 30003344556677</p>
+            <p><b>Coop Bank:</b> 40004455667788</p>
+          </div>
 
           <div className="w-full my-4">
-            <label className="block mb-2 text-sm font-medium">Upload Proof of Payment:</label>
+            <label className="block mb-2 text-sm font-medium">Upload Proof of Payment</label>
             <input
               type="file"
-              accept="image/*,application/pdf"
               onChange={(e) => setPaymentProof(e.target.files[0])}
-              className="border p-2 w-full"
+              className={`border p-2 w-full ${errors.paymentProof && 'border-red-500'}`}
+              disabled={loading}
             />
-            {paymentProof && (
-              <p className="text-xs mt-2">Selected file: {paymentProof.name}</p>
-            )}
+            {errors.paymentProof && <p className="text-red-500 text-xs">{errors.paymentProof}</p>}
           </div>
-          {/* Place Order Button */}
+
           <div className="w-full text-end mt-8">
             <button
-              type='submit'
-              className="bg-black text-white px-16 py-3 text-sm"
-            
+              type="submit"
+              disabled={loading}
+              className={`bg-black text-white px-16 py-3 text-sm ${
+                loading ? 'opacity-60 cursor-not-allowed' : ''
+              }`}
             >
-              PLACE ORDER
+              {loading ? 'Placing Order...' : 'PLACE ORDER'}
             </button>
           </div>
         </div>

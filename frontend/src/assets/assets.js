@@ -1,5 +1,5 @@
 import crossIcon from './cross icon.png';
-import Logo from './logo.png';
+import Logo from './logo.webp';
 import downArrow from './down-arrow.png';
 import exchange from './exchange.png';
 import menJacket1 from './menjacket1.jpg';
@@ -32,6 +32,7 @@ import aboutImage from './about-img.jpg';
 import ContactImage from './contact-img.jpg';
 import heroImage2 from './heroimage2.jpeg';
 import heroImage3 from './heroimage3.webp';
+import placeHolder from './placeholder.jpg';
 
 export const assets = {
   crossIcon,
@@ -68,6 +69,7 @@ export const assets = {
     ContactImage,
     heroImage2,
     heroImage3,
+    placeHolder,
 };
 
 export const products = [
