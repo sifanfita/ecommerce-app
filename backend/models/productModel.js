@@ -13,7 +13,7 @@ const productSchema = new mongoose.Schema({
       sizes: [
         {
           size: { type: String, required: true },
-          stock: { type: Number, required: true },
+          stock: { type: Number, required: true, min: 0 },
         },
       ],
     },
@@ -23,6 +23,21 @@ const productSchema = new mongoose.Schema({
   date: { type: Number, required: true },
 });
 
+/* 🔥 Virtual total stock */
+productSchema.virtual("totalStock").get(function () {
+  let total = 0;
+
+  this.colors.forEach((color) => {
+    color.sizes.forEach((size) => {
+      total += size.stock;
+    });
+  });
+
+  return total;
+});
+
+productSchema.set("toJSON", { virtuals: true });
+productSchema.set("toObject", { virtuals: true });
 
 const productModel =
   mongoose.models.product || mongoose.model("product", productSchema);

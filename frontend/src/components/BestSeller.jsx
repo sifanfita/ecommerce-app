@@ -7,7 +7,14 @@ const BestSeller = () => {
   const { products } = useContext(ShopContext)
 
   const [bestSeller, setBestSeller] = useState([])
-  const [loading, setLoading] = useState(true)   // 👈 NEW
+  const [loading, setLoading] = useState(true)
+
+  // ✅ Check if product has stock
+  const hasStock = (product) => {
+    return product?.colors?.some(color =>
+      color?.sizes?.some(size => size.stock > 0)
+    )
+  }
 
   useEffect(() => {
     if (!Array.isArray(products) || products.length === 0) {
@@ -15,8 +22,11 @@ const BestSeller = () => {
       return
     }
 
-    const bestProduct = products.filter(item => item.bestSeller)
-    setBestSeller(bestProduct.slice(0, 5))
+    const bestProducts = products
+      .filter(item => item.bestSeller && hasStock(item)) // 🔥 FIX HERE
+      .slice(0, 5)
+
+    setBestSeller(bestProducts)
     setLoading(false)
   }, [products])
 
@@ -30,14 +40,18 @@ const BestSeller = () => {
       </div>
 
       {loading ? (
-        <div className="text-center text-gray-400 py-10">
+        <div className='text-center text-gray-400 py-10'>
           Loading best sellers...
+        </div>
+      ) : bestSeller.length === 0 ? (
+        <div className='text-center text-gray-400 py-10'>
+          No best sellers available.
         </div>
       ) : (
         <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 gap-y-6'>
-          {bestSeller.map((item, index) => (
+          {bestSeller.map(item => (
             <ProductItem
-              key={index}
+              key={item._id}
               id={item._id}
               image={item.image[0]}
               name={item.name}

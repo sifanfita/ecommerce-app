@@ -77,13 +77,22 @@ const addProduct = async (req, res) => {
 };
 
 
-// function for get all products
+
+// function for get all products (ONLY AVAILABLE ONES)
 const listProducts = async (req, res) => {
   try {
     const products = await productModel.find({});
+
+    // 🔥 Filter products with at least one size in stock
+    const availableProducts = products.filter((product) => {
+      return product.colors.some((color) =>
+        color.sizes.some((size) => size.stock > 0)
+      );
+    });
+
     res.json({
       success: true,
-      data: products,
+      data: availableProducts,
     });
   } catch (error) {
     console.log(error);
@@ -94,11 +103,30 @@ const listProducts = async (req, res) => {
   }
 };
 
-// function for get single product
+
 const singleProduct = async (req, res) => {
   try {
     const { id } = req.body;
     const product = await productModel.findById(id);
+
+    if (!product) {
+      return res.json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    const hasStock = product.colors.some((color) =>
+      color.sizes.some((size) => size.stock > 0)
+    );
+
+    if (!hasStock) {
+      return res.json({
+        success: false,
+        message: "Product is out of stock",
+      });
+    }
+
     res.json({
       success: true,
       data: product,

@@ -6,47 +6,67 @@ import ProductItem from '../ProductItem'
 
 function Collection() {
   const { products, search, showSearch } = useContext(ShopContext)
+
   const [showFilter, setShowFilter] = useState(false)
   const [filterProducts, setFilterProducts] = useState([])
   const [category, setCategory] = useState([])
   const [sortType, setSortType] = useState('relevant')
-  const [loading, setLoading] = useState(true)  // 👈 NEW
+  const [loading, setLoading] = useState(true)
+
+  // ✅ Check if product has at least ONE size with stock > 0
+  const hasStock = (product) => {
+    return product?.colors?.some(color =>
+      color?.sizes?.some(size => size.stock > 0)
+    )
+  }
 
   const toggleCategory = (e) => {
-    if (category.includes(e.target.value)) {
-      setCategory(prev => prev.filter(item => item !== e.target.value))
-    } else {
-      setCategory(prev => [...prev, e.target.value])
-    }
+    const value = e.target.value
+    setCategory(prev =>
+      prev.includes(value)
+        ? prev.filter(item => item !== value)
+        : [...prev, value]
+    )
   }
 
   const applyFilter = () => {
     if (!Array.isArray(products) || products.length === 0) return
-    let productsCopy = products.slice()
+
+    let productsCopy = products
+      .filter(product => hasStock(product)) // 🔥 REMOVE ZERO-STOCK PRODUCTS
+      .slice()
+
     if (showSearch && search) {
       productsCopy = productsCopy.filter(item =>
         item.name.toLowerCase().includes(search.toLowerCase())
       )
     }
+
     if (category.length > 0) {
-      productsCopy = productsCopy.filter(item => category.includes(item.category))
+      productsCopy = productsCopy.filter(item =>
+        category.includes(item.category)
+      )
     }
+
     setFilterProducts(productsCopy)
   }
 
   const sortProduct = () => {
-    let fpCopy = filterProducts.slice()
+    let fpCopy = [...filterProducts]
+
     switch (sortType) {
       case 'low-high':
-        setFilterProducts(fpCopy.sort((a, b) => a.price - b.price))
+        fpCopy.sort((a, b) => a.price - b.price)
         break
       case 'high-low':
-        setFilterProducts(fpCopy.sort((a, b) => b.price - a.price))
+        fpCopy.sort((a, b) => b.price - a.price)
         break
       default:
         applyFilter()
-        break
+        return
     }
+
+    setFilterProducts(fpCopy)
   }
 
   useEffect(() => {
@@ -56,7 +76,7 @@ function Collection() {
       applyFilter()
       setLoading(false)
     }
-  }, [category, search, showSearch, products])
+  }, [products, category, search, showSearch])
 
   useEffect(() => {
     sortProduct()
@@ -64,7 +84,8 @@ function Collection() {
 
   return (
     <div className='flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10'>
-      {/* Left filter */}
+      
+      {/* Left Filters */}
       <div className='min-w-60'>
         <p
           onClick={() => setShowFilter(!showFilter)}
@@ -73,48 +94,60 @@ function Collection() {
           FILTERS
           <img className='h-3 sm:hidden' src={assets.downArrow} alt='' />
         </p>
-        <div className={`border border-gray-300 pl-5 py-3 mt-6 ${showFilter ? '' : 'hidden'} sm:block`}>
+
+        <div
+          className={`border border-gray-300 pl-5 py-3 mt-6 ${
+            showFilter ? '' : 'hidden'
+          } sm:block`}
+        >
           <p className='mb-3 text-sm font-medium'>CATEGORIES</p>
+
           <div className='flex flex-col gap-2 text-sm font-light text-gray-700'>
             {['T-shirt','Shirt','Trouser','Shoes','Jacket','Tuta'].map(cat => (
-              <p key={cat} className='flex gap-2'>
-                <input className='w-3' type='checkbox' value={cat} onChange={toggleCategory} />
+              <label key={cat} className='flex gap-2 cursor-pointer'>
+                <input
+                  type='checkbox'
+                  value={cat}
+                  className='w-3'
+                  onChange={toggleCategory}
+                />
                 {cat}
-              </p>
+              </label>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Right product list */}
+      {/* Right Product List */}
       <div className='flex-1'>
         <div className='flex justify-between text-base sm:text-2xl mb-4'>
           <Title text1={'ALL'} text2={'COLLECTIONS'} />
+
           <select
             onChange={(e) => setSortType(e.target.value)}
             className='border-2 border-gray-300 text-sm px-2'
           >
-            <option value="relevant">Sort by: Relevant</option>
-            <option value="low-high">Sort by: Low to High</option>
-            <option value="high-low">Sort by: High to Low</option>
+            <option value='relevant'>Sort by: Relevant</option>
+            <option value='low-high'>Sort by: Low to High</option>
+            <option value='high-low'>Sort by: High to Low</option>
           </select>
         </div>
 
         {loading ? (
-          <div className="text-center text-gray-400 py-10">
+          <div className='text-center text-gray-400 py-10'>
             Loading products...
           </div>
         ) : filterProducts.length === 0 ? (
-          <div className="text-center text-gray-400 py-10">
+          <div className='text-center text-gray-400 py-10'>
             No products found.
           </div>
         ) : (
           <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6'>
-            {filterProducts.map((item, index) => (
+            {filterProducts.map((item) => (
               <ProductItem
-                key={index}
-                name={item.name}
+                key={item._id}
                 id={item._id}
+                name={item.name}
                 price={item.price}
                 image={item.image[0]}
               />
