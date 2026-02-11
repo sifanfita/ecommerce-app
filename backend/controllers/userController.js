@@ -65,7 +65,11 @@ const loginWithRole = async (req, res, allowedRole) => {
     });
   } catch (error) {
     console.error(error);
-    res.json({ success: false, message: "Login failed" });
+    res.status(400).json({
+  success: false,
+  message: error.message || "Login failed"
+});
+
   }
 };
 
