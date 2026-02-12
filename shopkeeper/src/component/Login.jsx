@@ -10,17 +10,22 @@ const Login = ({ setToken }) => {
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(backendUrl + '/api/user/shopkeeper/login', {
-        email,
-        password,
-      });
+      const response = await axios.post(
+  backendUrl + '/api/user/shopkeeper/login',
+  {
+    email: email || undefined,
+    password,
+  }
+);
 
       if (response.data.success) {
-        setToken(response.data.token);
-        toast.success('Login successful!');
-        // Optional: redirect to dashboard
-        // navigate('/admin/dashboard');
-      } else {
+  sessionStorage.setItem("token", response.data.token); // ✅ ADD THIS
+  setToken(response.data.token);
+  toast.success('Login successful!');
+}
+
+
+       else {
         toast.error(response.data.message);
       }
     } catch (error) {

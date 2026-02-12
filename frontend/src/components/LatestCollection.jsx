@@ -19,7 +19,7 @@ const LatestCollection = () => {
   useEffect(() => {
     if (!Array.isArray(products) || products.length === 0) {
       setLoading(true)
-      return
+      return 
     }
 
     const availableProducts = products
