@@ -13,7 +13,8 @@ const Login = ({ setToken }) => {
       const response = await axios.post(backendUrl + '/api/user/admin/login', {
         email,
         password,
-      });
+      }
+    ); // important for cookies
 
       if (response.data.success) {
         setToken(response.data.token);
