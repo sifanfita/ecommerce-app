@@ -22,6 +22,7 @@ app.use(cors({
     "http://localhost:5173",
     "https://your-frontend-domain.com",
     "http://localhost:5174",
+    "http://localhost:5175",
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
