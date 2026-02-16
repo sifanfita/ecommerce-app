@@ -17,7 +17,7 @@ orderRouter.post("/list", authMiddleware, adminOrShopkeeper, allOrders); // GET 
 orderRouter.post("/status", authMiddleware, adminOrShopkeeper, updateOrderStatus);
 
 // User routes
-orderRouter.post("/place", upload.single("paymentProof"), authMiddleware, placeOrder);
+orderRouter.post("/place",  authMiddleware,upload.single("paymentProof"), placeOrder);
 orderRouter.post("/userorders", authMiddleware, userOrders);
 
 export default orderRouter;

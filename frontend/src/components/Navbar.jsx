@@ -1,10 +1,12 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useState, useRef } from 'react'
 import { assets } from '../assets/assets'
 import { Link, NavLink } from 'react-router-dom'
 import { ShopContext } from '../context/ShopContext'
 
 function Navbar() {
   const [visible, setVisible] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const profileButtonRef = useRef(null)
   const { setShowSearch, getCartCount, navigate, token, setToken, setCartItems } = useContext(ShopContext)
 
   const logout = () => {
@@ -31,35 +33,76 @@ function Navbar() {
       <div className='flex items-center gap-6'>
         <img onClick={()=>setShowSearch(true)} src={assets.searchIcon} className='w-5 cursor-pointer'/>
         
-        <div className='group relative'>
-          <img onClick={() => {token ? null : navigate('/login')}} className='w-5 cursor-pointer' src={assets.profileIcon}/>
-          {token && (
-            <div className='group-hover:block hidden absolute right-0 pt-4'>
-              <div className='flex flex-col gap-2 w-36 py-3 px-5 bg-slate-100 text-gray-500 rounded'>
-                <p onClick={() => navigate('/orders')} className='cursor-pointer hover:text-black'>Orders</p>
-                <p onClick={logout} className='cursor-pointer hover:text-black'>Logout</p>
+        <div className='relative' data-profile-dropdown>
+          <button
+            type="button"
+            ref={profileButtonRef}
+            onClick={() => (token ? setProfileOpen((o) => !o) : navigate('/login'))}
+            className="p-0 border-0 bg-transparent cursor-pointer"
+            aria-expanded={profileOpen}
+            aria-haspopup="true"
+          >
+            <img className='w-5' src={assets.profileIcon} alt='Profile' />
+          </button>
+          {token && profileOpen && (
+            <>
+              <div
+                className='fixed inset-0 z-40'
+                aria-hidden
+                onClick={() => { setProfileOpen(false); profileButtonRef.current?.focus(); }}
+              />
+              <div className='absolute right-0 pt-4 z-50'>
+                <div className='flex flex-col gap-2 w-36 py-3 px-5 bg-white border shadow-lg text-gray-600 rounded'>
+                  <p
+                    onClick={() => { setProfileOpen(false); profileButtonRef.current?.focus(); navigate('/orders'); }}
+                    className='cursor-pointer hover:text-black'
+                  >
+                    Orders
+                  </p>
+                  <p
+                    onClick={() => { setProfileOpen(false); profileButtonRef.current?.focus(); logout(); }}
+                    className='cursor-pointer hover:text-black'
+                  >
+                    Logout
+                  </p>
+                </div>
               </div>
-            </div>
+            </>
           )}
         </div>
 
         <Link to='/cart' className='relative'>
-          <img src={assets.shoppingBag} className='w-5'/>
-          <p className='absolute -right-1 -bottom-1 w-4 text-center leading-4 bg-black text-white rounded-full text-[8px]'>{getCartCount()}</p>
+          <img src={assets.shoppingBag} className='w-5' alt='Cart'/>
+          {getCartCount() > 0 && (
+            <span className='absolute -right-1 -bottom-1 min-w-4 h-4 text-center leading-4 bg-black text-white rounded-full text-[8px]'>
+              {getCartCount()}
+            </span>
+          )}
         </Link>
 
         <img onClick={() => setVisible(true)} src={assets.menuIcon} className='w-5 cursor-pointer sm:hidden'/>
       </div>
 
       {/* Mobile Menu */}
-      <div className={`fixed top-0 right-0 bottom-0 bg-white transition-all ${visible ? 'w-full' : 'w-0'} overflow-hidden z-40`}>
+      {visible && (
+        <div
+          className="fixed inset-0 z-40 bg-black/20 sm:bg-transparent"
+          aria-hidden
+          onClick={() => setVisible(false)}
+        />
+      )}
+      <div className={`fixed top-0 right-0 bottom-0 w-full max-w-[280px] bg-white shadow-xl transition-transform duration-300 ease-out z-50 ${visible ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className='flex flex-col text-gray-600'>
-          <div onClick={()=>setVisible(false)} className='flex items-center gap-4 p-3'>
-            <img className='h-4 rotate-90' src={assets.downArrow}/>
+          <button
+            type="button"
+            onClick={() => setVisible(false)}
+            className='flex items-center gap-4 p-3 text-left hover:bg-gray-50'
+          >
+            <img className='h-4 rotate-90' src={assets.downArrow} alt="" />
             <p>Back</p>
-          </div>
+          </button>
           {['/', '/collection', '/about', '/contact'].map((path, i) => (
-            <NavLink key={i} onClick={() => setVisible(false)} className='py-2 pl-6 border' to={path}>
+            <NavLink key={i} onClick={() => setVisible(false)} className='py-2 pl-6 border hover:bg-gray-50' to={path}>
               {['HOME','COLLECTION','ABOUT','CONTACT'][i]}
             </NavLink>
           ))}

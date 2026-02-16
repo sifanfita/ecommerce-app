@@ -1,6 +1,8 @@
 import React, { useContext, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { ShopContext } from '../../context/ShopContext';
 import Title from '../Title';
+import Loader from '../Loader';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -64,9 +66,9 @@ function Orders() {
 
       <div>
         {loading ? (
-          <p className="text-gray-400 py-6 text-center">Loading orders...</p>
+          <Loader message="Loading orders..." className="py-6" />
         ) : orderData.length > 0 ? (
-          orderData.slice(0, 4).map((item, index) => (
+          orderData.map((item, index) => (
             <div
               key={index}
               className="py-4 border-t border-b text-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
@@ -116,7 +118,10 @@ function Orders() {
             </div>
           ))
         ) : (
-          <p className="text-gray-400 py-4">No orders yet</p>
+          <div className="text-center py-10 text-gray-500">
+          <p>No orders yet.</p>
+          <Link to="/collection" className="inline-block mt-3 text-sm underline hover:text-black">Start shopping</Link>
+        </div>
         )}
       </div>
     </div>

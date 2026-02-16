@@ -1,8 +1,11 @@
 import React, { useContext, useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { ShopContext } from "../../context/ShopContext";
 import Title from "../Title";
 import { assets } from "../../assets/assets";
 import CartTotal from "../CartTotal";
+import Loader from "../Loader";
+import CheckoutSteps from "../CheckoutSteps";
 
 function Cart() {
   const {
@@ -41,29 +44,33 @@ function Cart() {
   }, [cartItems, products]);
 
   if (loading) {
-    return (
-      <div className="text-center py-20 text-gray-400">
-        Loading cart items...
-      </div>
-    );
+    return <Loader message="Loading cart..." />;
   }
 
   return (
     <div className="pt-14">
+      <CheckoutSteps currentStep={1} />
       <div className="text-2xl mb-3">
         <Title text1={"YOUR"} text2={"CART"} />
       </div>
 
       {cartData.length === 0 ? (
-        <p className="text-center py-10 text-gray-400">
-          Your cart is empty.
-        </p>
+        <div className="text-center py-14 flex flex-col items-center gap-4">
+          <p className="text-gray-500">Your cart is empty.</p>
+          <Link
+            to="/collection"
+            className="bg-black text-white text-sm px-6 py-3 hover:opacity-90 transition-opacity"
+          >
+            CONTINUE SHOPPING
+          </Link>
+        </div>
       ) : (
         <div>
           {cartData.map((item, index) => {
             const productData = products.find(
               (product) => product._id.toString() === item._id.toString()
             );
+            if (!productData) return null;
             return (
               <div
                 key={index}
@@ -72,7 +79,7 @@ function Cart() {
                 <div className="flex items-start gap-6">
                   <img
                     className="w-16 sm:w-20"
-                    src={productData.image[0]}
+                    src={productData?.image?.[0] || ""}
                     alt={productData.name}
                   />
                   <div>
@@ -91,15 +98,16 @@ function Cart() {
                 </div>
 
                 <input
-                  onClick={(e) =>
-                    e.target.value === "" || e.target.value == "0"
-                      ? null
-                      : updateQuantity(item._id, item.size, Number(e.target.value))
-                  }
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (val >= 1) updateQuantity(item._id, item.size, val);
+                    else if (e.target.value === "" || val === 0)
+                      updateQuantity(item._id, item.size, 0);
+                  }}
                   className="border max-w-10 sm:max-w-20 px-1 sm:px-2 py-1"
                   type="number"
                   min={1}
-                  defaultValue={item.quantity}
+                  value={item.quantity}
                 />
 
                 <img

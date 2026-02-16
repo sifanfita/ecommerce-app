@@ -3,6 +3,7 @@ import { ShopContext } from '../../context/ShopContext'
 import { assets } from '../../assets/assets'
 import Title from '../Title'
 import ProductItem from '../ProductItem'
+import Loader from '../Loader'
 
 function Collection() {
   const { products, search, showSearch } = useContext(ShopContext)
@@ -132,11 +133,12 @@ function Collection() {
             <option value='high-low'>Sort by: High to Low</option>
           </select>
         </div>
+        {!showSearch && (
+          <p className='text-gray-500 text-sm mb-3'>Use the search icon in the navbar to search products.</p>
+        )}
 
         {loading ? (
-          <div className='text-center text-gray-400 py-10'>
-            Loading products...
-          </div>
+          <Loader message="Loading products..." className="py-10" />
         ) : filterProducts.length === 0 ? (
           <div className='text-center text-gray-400 py-10'>
             No products found.

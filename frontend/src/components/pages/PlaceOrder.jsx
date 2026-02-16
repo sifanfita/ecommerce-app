@@ -1,6 +1,7 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import Title from '../Title';
 import CartTotal from '../CartTotal';
+import CheckoutSteps from '../CheckoutSteps';
 import { ShopContext } from '../../context/ShopContext';
 
 function PlaceOrder() {
@@ -9,11 +10,17 @@ function PlaceOrder() {
     setPaymentProof,
     handlePlaceOrder,
     deliveryInfo,
-    setDeliveryInfo
+    setDeliveryInfo,
+    getCartCount,
+    navigate,
   } = useContext(ShopContext);
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (getCartCount() === 0) navigate('/cart');
+  }, [getCartCount, navigate]);
 
   const requiredFields = ['firstName', 'lastName', 'email', 'street', 'city', 'state', 'phone'];
 
@@ -71,9 +78,17 @@ function PlaceOrder() {
       className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh]"
     >
       <div className="flex flex-col gap-4 w-full sm:max-w-[480px]">
+        <CheckoutSteps currentStep={2} />
 
-        <div className="text-xl sm:text-2xl my-3">
+        <div className="text-xl sm:text-2xl my-3 flex items-center justify-between flex-wrap gap-2">
           <Title text1="DELIVERY" text2="INFORMATION" />
+          <button
+            type="button"
+            onClick={() => navigate('/cart')}
+            className="text-sm text-gray-600 hover:text-black underline"
+          >
+            ← Back to cart
+          </button>
         </div>
 
         <div className="flex gap-3">

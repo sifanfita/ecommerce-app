@@ -22,12 +22,12 @@ const ProductItem = ({ id, image, name, price }) => {
           src={imgSrc}
           alt={name}
           onLoad={() => setImgLoaded(true)}
-          onError={() => setImgSrc(placeholder)}
+          onError={() => setImgSrc(assets.placeHolder)}
         />
       </div>
 
       <p className='pt-3 pb-1 text-sm truncate'>{name}</p>
-      <p className='text-sm font-medium'>{price}{currency}</p>
+      <p className='text-sm font-medium'>{currency} {price}</p>
     </Link>
   )
 }

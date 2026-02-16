@@ -25,7 +25,7 @@ app.use(cors({
     "http://localhost:5175",
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "token"],
   
 }));
 

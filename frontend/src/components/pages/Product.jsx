@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from 'react'
 import { useParams } from 'react-router-dom'
 import { ShopContext } from '../../context/ShopContext'
 import RelatedProduct from '../RelatedProduct'
+import Loader from '../Loader'
 import { toast } from 'react-toastify'
 import placeholder from '../../assets/placeholder.jpg'
 
@@ -34,13 +35,13 @@ function Product() {
 
   const handleAddToCart = async () => {
     if (!selectedColor || !selectedSize) {
-      toast.warning("Please select color and size")
+      toast.warning("Please select both color and size")
       return
     }
 
     setAddingToCart(true)
     try {
-      await addToCart(productData._id, selectedColor, selectedSize)
+      await addToCart(productData._id, `${selectedColor}-${selectedSize}`)
       toast.success("Product added to cart!")
     } catch (err) {
       toast.error("Failed to add product to cart.")
@@ -51,7 +52,7 @@ function Product() {
   }
 
   if (loading) {
-    return <div className="pt-20 text-center text-gray-400">Loading product...</div>
+    return <Loader message="Loading product..." className="pt-20" />
   }
 
   if (!productData) return null
@@ -113,32 +114,54 @@ function Product() {
           </div>
 
           {/* Sizes */}
-          {selectedColor && (
-            <div className='flex flex-col gap-4 my-4'>
-              <p>Select Size</p>
-              <div className='flex gap-2 flex-wrap'>
-                {productData.colors.find(c => c.color === selectedColor).sizes.map((sizeObj, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedSize(sizeObj.size)}
-                    className={`border py-2 px-4 bg-gray-100 ${sizeObj.size === selectedSize ? 'border-orange-500' : ''}`}
-                  >
-                    {sizeObj.size} ({sizeObj.stock})
-                  </button>
-                ))}
+          {selectedColor && (() => {
+            const colorObj = productData.colors.find(c => c.color === selectedColor)
+            const sizes = colorObj?.sizes ?? []
+            const inStockSizes = sizes.filter(s => s.stock > 0)
+            const selectedSizeStock = sizes.find(s => s.size === selectedSize)?.stock ?? 0
+            return (
+              <div className='flex flex-col gap-4 my-4'>
+                <p>Select Size</p>
+                <div className='flex gap-2 flex-wrap'>
+                  {sizes.map((sizeObj, index) => {
+                    const outOfStock = sizeObj.stock === 0
+                    return (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => !outOfStock && setSelectedSize(sizeObj.size)}
+                        disabled={outOfStock}
+                        className={`border py-2 px-4 ${outOfStock ? 'bg-gray-100 text-gray-400 cursor-not-allowed line-through' : 'bg-gray-100 hover:border-orange-400'} ${sizeObj.size === selectedSize ? 'border-orange-500 ring-1 ring-orange-500' : ''}`}
+                      >
+                        {sizeObj.size} {outOfStock ? '(Out of stock)' : `(${sizeObj.stock})`}
+                      </button>
+                    )
+                  })}
+                </div>
+                {inStockSizes.length === 0 && (
+                  <p className="text-amber-600 text-sm font-medium">This color is currently out of stock.</p>
+                )}
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Add To Cart */}
-          <button
-            onClick={handleAddToCart}
-            disabled={!selectedColor || !selectedSize || addingToCart}
-            className='bg-black text-white px-8 py-3 mt-4 disabled:opacity-50 flex items-center gap-2'
-          >
-            {addingToCart ? "Adding..." : "ADD TO CART"}
-            {addingToCart && <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>}
-          </button>
+          {(() => {
+            const colorObj = productData.colors?.find(c => c.color === selectedColor)
+            const selectedSizeStock = colorObj?.sizes?.find(s => s.size === selectedSize)?.stock ?? 0
+            const canAdd = selectedColor && selectedSize && selectedSizeStock > 0 && !addingToCart
+            const label = addingToCart ? 'Adding...' : (selectedSize && selectedSizeStock === 0 ? 'Out of stock' : 'ADD TO CART')
+            return (
+              <button
+                onClick={handleAddToCart}
+                disabled={!canAdd}
+                className='bg-black text-white px-8 py-3 mt-4 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'
+              >
+                {label}
+                {addingToCart && <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" aria-hidden />}
+              </button>
+            )
+          })()}
 
           <hr className='mt-7 sm:w-4/5' />
 
