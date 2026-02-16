@@ -9,7 +9,7 @@ const authMiddleware = async (req, res, next) => {
     if (!token) {
       return res.json({
         success: false,
-        message: "Not authorized, no token",
+        message: "Not authorized, Login required",
       });
     }
 
