@@ -20,7 +20,9 @@ const CreateShopkeeperModal = ({ token, onClose = () => console.log("onClose cal
       const res = await axios.post(
         `${backendUrl}/api/user/admin/shopkeeper/create`,
         form,
-        { headers: { token } }
+        { headers: {
+      Authorization: `Bearer ${token}`,
+    } }
       );
 
       if (res.data.success) {

@@ -13,9 +13,11 @@ const AdminShopkeepers = ({ token }) => {
     try {
       const res = await axios.get(
         `${backendUrl}/api/user/admin/shopkeepers`,
-        { headers: { token } }
+        { headers: {
+      Authorization: `Bearer ${token}`,
+    } }
       );
-
+      
       if (res.data.success) {
         setShopkeepers(res.data.shopkeepers);
       }

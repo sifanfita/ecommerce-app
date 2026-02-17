@@ -11,7 +11,11 @@ const List = ({ token }) => {
 
   const fetchList = async () => {
     try {
-      const response = await axios.get(backendUrl + "/api/product/list");
+      const response = await axios.get(backendUrl + "/api/product/list", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.data.success) {
         setList(response.data.data);
       } else {
@@ -27,7 +31,9 @@ const List = ({ token }) => {
       const response = await axios.put(
         backendUrl + "/api/product/updateStock",
         { productId, color, size, stock: newStock },
-        { headers: { token } }
+        { headers: {
+      Authorization: `Bearer ${token}`,
+    } }
       );
 
       if (response.data.success) {

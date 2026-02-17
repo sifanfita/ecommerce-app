@@ -11,7 +11,9 @@ const Customers = ({ token }) => {
   const fetchCustomers = async () => {
     try {
       const res = await axios.get(backendUrl + "/api/customers", {
-        headers: { token },
+        headers: {
+      Authorization: `Bearer ${token}`,
+    },
       });
       console.log(res.data.customers);
 

@@ -1,6 +1,8 @@
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
+import productModel from "../models/productModel.js";
 import { v2 as cloudinary } from "cloudinary";
+
 
 // =======================
 // ADMIN – GET ALL ORDERS
@@ -22,12 +24,13 @@ const allOrders = async (req, res) => {
   }
 };
 
+
 // =======================
 // USER – GET THEIR ORDERS
 // =======================
 const userOrders = async (req, res) => {
   try {
-    const  userId  = req.user._id;
+    const userId = req.user._id;
 
     if (!userId) {
       return res.json({
@@ -51,6 +54,7 @@ const userOrders = async (req, res) => {
   }
 };
 
+
 // =======================
 // ADMIN – UPDATE STATUS
 // =======================
@@ -73,17 +77,20 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+
 // =======================
 // USER – PLACE ORDER
 // =======================
 const placeOrder = async (req, res) => {
   try {
     const userId = req.user._id;
+
     const items = JSON.parse(req.body.items);
     const address = JSON.parse(req.body.address);
     const amount = req.body.amount;
 
     const paymentProofFile = req.file;
+
     if (!paymentProofFile) {
       return res.json({
         success: false,
@@ -91,7 +98,9 @@ const placeOrder = async (req, res) => {
       });
     }
 
-    // Upload to Cloudinary
+    // ==========================
+    // 1️⃣ Upload payment proof
+    // ==========================
     const uploadResult = await cloudinary.uploader.upload(
       paymentProofFile.path,
       {
@@ -102,28 +111,92 @@ const placeOrder = async (req, res) => {
 
     const paymentProofUrl = uploadResult.secure_url;
 
+
+    // ==========================
+    // 2️⃣ Update product stock
+    // ==========================
+    for (const item of items) {
+      const product = await productModel.findById(item.itemId);
+
+      if (!product) {
+        return res.json({
+          success: false,
+          message: "Product not found",
+        });
+      }
+
+      const colorData = product.colors.find(
+        (c) => c.color === item.color
+      );
+
+      if (!colorData) {
+        return res.json({
+          success: false,
+          message: "Color not available",
+        });
+      }
+
+      const sizeData = colorData.sizes.find(
+        (s) => s.size === item.size
+      );
+
+      if (!sizeData) {
+        return res.json({
+          success: false,
+          message: "Size not available",
+        });
+      }
+
+      // Check stock
+      if (sizeData.stock < item.quantity) {
+        return res.json({
+          success: false,
+          message: `${product.name} (${item.size}) is out of stock`,
+        });
+      }
+
+      // Reduce stock
+      sizeData.stock -= item.quantity;
+
+      await product.save();
+    }
+
+
+    // ==========================
+    // 3️⃣ Create Order
+    // ==========================
     const orderData = {
       userId,
       items,
       amount,
       address,
       paymentProof: paymentProofUrl,
+      status: "Processing",
       date: Date.now(),
     };
 
     const newOrder = new orderModel(orderData);
     await newOrder.save();
 
-    // Clear cart
+
+    // ==========================
+    // 4️⃣ Clear user cart
+    // ==========================
     await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
+
+    // ==========================
+    // 5️⃣ Response
+    // ==========================
     res.json({
       success: true,
       message: "Order placed successfully",
       order: newOrder,
     });
+
   } catch (error) {
     console.log(error);
+
     res.json({
       success: false,
       message: error.message,
@@ -131,4 +204,10 @@ const placeOrder = async (req, res) => {
   }
 };
 
-export { allOrders, userOrders, placeOrder, updateOrderStatus };
+
+export {
+  allOrders,
+  userOrders,
+  placeOrder,
+  updateOrderStatus,
+};

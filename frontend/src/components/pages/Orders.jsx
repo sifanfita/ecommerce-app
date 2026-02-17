@@ -20,7 +20,9 @@ function Orders() {
       const response = await axios.post(
         backendUrl + '/api/order/userorders',
         {},
-        { headers: { token } }
+        { headers: {
+      Authorization: `Bearer ${token}`,
+    } }
       );
 
       if (response.data.success) {
@@ -36,7 +38,7 @@ function Orders() {
               paymentProof: order.paymentProof,
               date: order.date,
               name: productInfo?.name || "Unknown Product",
-              image: productInfo?.image || [],
+              image: productInfo?.image?.[0] || '',
               price: productInfo?.price || 0,
             });
           });

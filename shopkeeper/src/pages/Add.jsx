@@ -44,7 +44,9 @@ const Add = ({ token }) => {
       const response = await axios.post(
         backendUrl + "/api/product/add",
         formData,
-        { headers: { token } }
+        { headers: {
+          Authorization: `Bearer ${token}`,
+        }}
       );
 
       if (response.data.success) {

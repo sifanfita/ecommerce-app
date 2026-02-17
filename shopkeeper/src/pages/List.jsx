@@ -27,7 +27,9 @@ const List = ({ token }) => {
       const response = await axios.put(
         backendUrl + "/api/product/updateStock",
         { productId, color, size, stock: newStock },
-        { headers: { token } }
+        { headers: {
+                  Authorization: `Bearer ${token}`,
+                } }
       );
 
       if (response.data.success) {
