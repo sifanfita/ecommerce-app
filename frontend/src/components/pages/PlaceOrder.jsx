@@ -1,8 +1,8 @@
-import React, { useContext, useState, useEffect } from 'react';
-import Title from '../Title';
-import CartTotal from '../CartTotal';
-import CheckoutSteps from '../CheckoutSteps';
-import { ShopContext } from '../../context/ShopContext';
+import React, { useContext, useEffect, useState } from "react";
+import Title from "../Title";
+import CartTotal from "../CartTotal";
+import CheckoutSteps from "../CheckoutSteps";
+import { ShopContext } from "../../context/ShopContext";
 
 function PlaceOrder() {
   const {
@@ -18,36 +18,43 @@ function PlaceOrder() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // Redirect if cart is empty
   useEffect(() => {
-    if (getCartCount() === 0) navigate('/cart');
+    if (getCartCount() === 0) navigate("/cart");
   }, [getCartCount, navigate]);
 
-  const requiredFields = ['firstName', 'lastName', 'email', 'street', 'city', 'state', 'phone'];
+  const requiredFields = [
+    "firstName",
+    "lastName",
+    "email",
+    "street",
+    "city",
+    "state",
+    "phone",
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     setDeliveryInfo({ ...deliveryInfo, [name]: value });
 
-    // Live validation
+    // live validation
     if (!value.trim()) {
-      setErrors(prev => ({ ...prev, [name]: 'This field is required' }));
+      setErrors((prev) => ({ ...prev, [name]: "This field is required" }));
     } else {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const validate = () => {
     let newErrors = {};
-
-    requiredFields.forEach(field => {
+    requiredFields.forEach((field) => {
       if (!deliveryInfo[field]?.trim()) {
-        newErrors[field] = 'This field is required';
+        newErrors[field] = "This field is required";
       }
     });
 
     if (!paymentProof) {
-      newErrors.paymentProof = 'Payment proof is required';
+      newErrors.paymentProof = "Payment proof is required";
     }
 
     setErrors(newErrors);
@@ -56,7 +63,6 @@ function PlaceOrder() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-
     if (!validate()) return;
 
     try {
@@ -69,7 +75,7 @@ function PlaceOrder() {
 
   const inputClass = (name) =>
     `border rounded py-1.5 px-3.5 w-full ${
-      errors[name] ? 'border-red-500' : 'border-gray-300'
+      errors[name] ? "border-red-500" : "border-gray-300"
     }`;
 
   return (
@@ -84,7 +90,7 @@ function PlaceOrder() {
           <Title text1="DELIVERY" text2="INFORMATION" />
           <button
             type="button"
-            onClick={() => navigate('/cart')}
+            onClick={() => navigate("/cart")}
             className="text-sm text-gray-600 hover:text-black underline"
           >
             ← Back to cart
@@ -93,19 +99,35 @@ function PlaceOrder() {
 
         <div className="flex gap-3">
           <div className="w-full">
-            <input name="firstName" value={deliveryInfo.firstName} onChange={handleChange}
-              className={inputClass('firstName')} placeholder="First Name" disabled={loading} />
-            {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName}</p>}
+            <input
+              name="firstName"
+              value={deliveryInfo.firstName}
+              onChange={handleChange}
+              className={inputClass("firstName")}
+              placeholder="First Name"
+              disabled={loading}
+            />
+            {errors.firstName && (
+              <p className="text-red-500 text-xs">{errors.firstName}</p>
+            )}
           </div>
 
           <div className="w-full">
-            <input name="lastName" value={deliveryInfo.lastName} onChange={handleChange}
-              className={inputClass('lastName')} placeholder="Last Name" disabled={loading} />
-            {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName}</p>}
+            <input
+              name="lastName"
+              value={deliveryInfo.lastName}
+              onChange={handleChange}
+              className={inputClass("lastName")}
+              placeholder="Last Name"
+              disabled={loading}
+            />
+            {errors.lastName && (
+              <p className="text-red-500 text-xs">{errors.lastName}</p>
+            )}
           </div>
         </div>
 
-        {['email','street','phone'].map(field => (
+        {["email", "street", "phone"].map((field) => (
           <div key={field}>
             <input
               name={field}
@@ -115,12 +137,14 @@ function PlaceOrder() {
               placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
               disabled={loading}
             />
-            {errors[field] && <p className="text-red-500 text-xs">{errors[field]}</p>}
+            {errors[field] && (
+              <p className="text-red-500 text-xs">{errors[field]}</p>
+            )}
           </div>
         ))}
 
         <div className="flex gap-3">
-          {['city','state'].map(field => (
+          {["city", "state"].map((field) => (
             <div className="w-full" key={field}>
               <input
                 name={field}
@@ -130,7 +154,9 @@ function PlaceOrder() {
                 placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
                 disabled={loading}
               />
-              {errors[field] && <p className="text-red-500 text-xs">{errors[field]}</p>}
+              {errors[field] && (
+                <p className="text-red-500 text-xs">{errors[field]}</p>
+              )}
             </div>
           ))}
         </div>
@@ -143,21 +169,35 @@ function PlaceOrder() {
           <Title text1="PAYMENT" text2="METHOD" />
 
           <div className="mb-6 text-sm text-gray-700 space-y-2">
-            <p><b>CBE:</b> 10001122334455</p>
-            <p><b>Awash:</b> 20002233445566</p>
-            <p><b>Abyssinia:</b> 30003344556677</p>
-            <p><b>Coop Bank:</b> 40004455667788</p>
+            <p>
+              <b>CBE:</b> 10001122334455
+            </p>
+            <p>
+              <b>Awash:</b> 20002233445566
+            </p>
+            <p>
+              <b>Abyssinia:</b> 30003344556677
+            </p>
+            <p>
+              <b>Coop Bank:</b> 40004455667788
+            </p>
           </div>
 
           <div className="w-full my-4">
-            <label className="block mb-2 text-sm font-medium">Upload Proof of Payment</label>
+            <label className="block mb-2 text-sm font-medium">
+              Upload Proof of Payment
+            </label>
             <input
               type="file"
               onChange={(e) => setPaymentProof(e.target.files[0])}
-              className={`border p-2 w-full ${errors.paymentProof && 'border-red-500'}`}
+              className={`border p-2 w-full ${
+                errors.paymentProof && "border-red-500"
+              }`}
               disabled={loading}
             />
-            {errors.paymentProof && <p className="text-red-500 text-xs">{errors.paymentProof}</p>}
+            {errors.paymentProof && (
+              <p className="text-red-500 text-xs">{errors.paymentProof}</p>
+            )}
           </div>
 
           <div className="w-full text-end mt-8">
@@ -165,10 +205,10 @@ function PlaceOrder() {
               type="submit"
               disabled={loading}
               className={`bg-black text-white px-16 py-3 text-sm ${
-                loading ? 'opacity-60 cursor-not-allowed' : ''
+                loading ? "opacity-60 cursor-not-allowed" : ""
               }`}
             >
-              {loading ? 'Placing Order...' : 'PLACE ORDER'}
+              {loading ? "Placing Order..." : "PLACE ORDER"}
             </button>
           </div>
         </div>

@@ -63,8 +63,9 @@ function Login() {
         toast.error(response.data.message);
       }
     } catch (error) {
+      console.log("Login error:", error);
       toast.error(
-        error.response?.data?.message || "Something went wrong. Try again."
+        error.response?.data?.message || error.message || "Something went wrong. Try again."
       );
     } finally {
       setLoading(false);

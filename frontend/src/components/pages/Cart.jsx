@@ -8,17 +8,20 @@ import Loader from "../Loader";
 import CheckoutSteps from "../CheckoutSteps";
 
 function Cart() {
-  const {
-    cartItems,
-    products,
-    currency,
-    delivery_fee,
-    updateQuantity,
-    navigate,
-  } = useContext(ShopContext);
+  const { cartItems, products, currency, updateQuantity, navigate } =
+    useContext(ShopContext);
 
   const [cartData, setCartData] = useState([]);
-  const [loading, setLoading] = useState(true); // 👈 NEW
+  const [loading, setLoading] = useState(true);
+
+  // Helper to get stock from nested colors/sizes
+  const getAvailableStock = (product, sizeKey) => {
+    const [color, size] = sizeKey.split("-");
+    const colorObj = product.colors.find((c) => c.color === color);
+    if (!colorObj) return 0;
+    const sizeObj = colorObj.sizes.find((s) => s.size === size);
+    return sizeObj?.stock || 0;
+  };
 
   useEffect(() => {
     if (!products || products.length === 0) {
@@ -40,7 +43,7 @@ function Cart() {
     }
 
     setCartData(tempData);
-    setLoading(false); // 👈 Done loading
+    setLoading(false);
   }, [cartItems, products]);
 
   if (loading) {
@@ -71,6 +74,9 @@ function Cart() {
               (product) => product._id.toString() === item._id.toString()
             );
             if (!productData) return null;
+
+            const availableStock = getAvailableStock(productData, item.size);
+
             return (
               <div
                 key={index}
@@ -99,14 +105,18 @@ function Cart() {
 
                 <input
                   onChange={(e) => {
-                    const val = Number(e.target.value);
-                    if (val >= 1) updateQuantity(item._id, item.size, val);
-                    else if (e.target.value === "" || val === 0)
+                    let val = Number(e.target.value);
+                    if (val >= 1) {
+                      if (val > availableStock) val = availableStock; // cap at stock
+                      updateQuantity(item._id, item.size, val);
+                    } else if (e.target.value === "" || val === 0) {
                       updateQuantity(item._id, item.size, 0);
+                    }
                   }}
                   className="border max-w-10 sm:max-w-20 px-1 sm:px-2 py-1"
                   type="number"
                   min={1}
+                  max={availableStock}
                   value={item.quantity}
                 />
 

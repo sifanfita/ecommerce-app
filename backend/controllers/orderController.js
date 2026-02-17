@@ -32,13 +32,6 @@ const userOrders = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    if (!userId) {
-      return res.json({
-        success: false,
-        message: "User ID missing",
-      });
-    }
-
     const orders = await orderModel.find({ userId }).sort({ date: -1 });
 
     res.json({
@@ -113,9 +106,10 @@ const placeOrder = async (req, res) => {
 
 
     // ==========================
-    // 2️⃣ Update product stock
+    // 2️⃣ Update stock
     // ==========================
     for (const item of items) {
+
       const product = await productModel.findById(item.itemId);
 
       if (!product) {
@@ -126,24 +120,28 @@ const placeOrder = async (req, res) => {
       }
 
       const colorData = product.colors.find(
-        (c) => c.color === item.color
+        (c) =>
+          c.color.toLowerCase().trim() ===
+          item.color.toLowerCase().trim()
       );
 
       if (!colorData) {
         return res.json({
           success: false,
-          message: "Color not available",
+          message: `Color not available for ${product.name}`,
         });
       }
 
       const sizeData = colorData.sizes.find(
-        (s) => s.size === item.size
+        (s) =>
+          s.size.toLowerCase().trim() ===
+          item.size.toLowerCase().trim()
       );
 
       if (!sizeData) {
         return res.json({
           success: false,
-          message: "Size not available",
+          message: `Size not available for ${product.name}`,
         });
       }
 
@@ -180,7 +178,7 @@ const placeOrder = async (req, res) => {
 
 
     // ==========================
-    // 4️⃣ Clear user cart
+    // 4️⃣ Clear Cart
     // ==========================
     await userModel.findByIdAndUpdate(userId, { cartData: {} });
 

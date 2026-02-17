@@ -19,13 +19,11 @@ function Product() {
 
   const fetchProductData = () => {
     setLoading(true)
-
     const product = products.find(item => item._id === productId)
     if (product) {
       setProductData(product)
       setMainImage(product.image?.[0] || placeholder)
     }
-
     setTimeout(() => setLoading(false), 300)
   }
 
@@ -38,10 +36,10 @@ function Product() {
       toast.warning("Please select both color and size")
       return
     }
-
     setAddingToCart(true)
     try {
-      await addToCart(productData._id, `${selectedColor}-${selectedSize}`)
+      await addToCart(productData._id, selectedColor, selectedSize);
+
       toast.success("Product added to cart!")
     } catch (err) {
       toast.error("Failed to add product to cart.")
@@ -65,7 +63,6 @@ function Product() {
 
         {/* Images */}
         <div className='flex-1 flex flex-col-reverse gap-3 sm:flex-row'>
-
           <div className='flex sm:flex-col overflow-x-auto sm:overflow-y-scroll sm:w-[18.7%] w-full'>
             {(productData.image?.length ? productData.image : [placeholder]).map((item, index) => (
               <img
