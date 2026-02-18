@@ -20,7 +20,9 @@ const port = process.env.PORT || 9000;
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://your-frontend-domain.com",
+    "https://ecommerce-app-three-sage.vercel.app",
+    "https://ecommerce-app-admin-delta.vercel.app",
+    "https://ecommerce-app-shopkeeper.vercel.app",
     "http://localhost:5174",
     "http://localhost:5175",
   ],
