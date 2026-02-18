@@ -13,6 +13,8 @@ function Cart() {
 
   const [cartData, setCartData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [removingKey, setRemovingKey] = useState(null);
 
   // Helper to get stock from nested colors/sizes
   const getAvailableStock = (product, sizeKey) => {
@@ -120,12 +122,28 @@ function Cart() {
                   value={item.quantity}
                 />
 
-                <img
-                  onClick={() => updateQuantity(item._id, item.size, 0)}
-                  className="w-4 mr-4 sm:w-5 cursor-pointer"
-                  src={assets.trashBin}
-                  alt="Remove item"
-                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const key = `${item._id}-${item.size}`;
+                    if (removingKey) return;
+                    setRemovingKey(key);
+                    try {
+                      await updateQuantity(item._id, item.size, 0);
+                    } finally {
+                      setRemovingKey(null);
+                    }
+                  }}
+                  disabled={removingKey === `${item._id}-${item.size}`}
+                  className="p-2 mr-2 -m-2 rounded disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none hover:bg-red-50 transition-colors"
+                  aria-label="Remove item from cart"
+                >
+                  {removingKey === `${item._id}-${item.size}` ? (
+                    <span className="inline-block w-4 h-4 sm:w-5 sm:h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" aria-hidden />
+                  ) : (
+                    <img className="w-4 sm:w-5" src={assets.trashBin} alt="" aria-hidden />
+                  )}
+                </button>
               </div>
             );
           })}
@@ -135,11 +153,15 @@ function Cart() {
               <CartTotal />
               <div className="w-full text-end">
                 <button
-                  className="bg-black text-white text-sm my-8 px-8 py-3"
-                  disabled={cartData.length === 0}
-                  onClick={() => navigate("/place-order")}
+                  className="flex items-center justify-center gap-2 bg-black text-white text-sm my-8 px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  disabled={cartData.length === 0 || isNavigating}
+                  onClick={() => {
+                    if (isNavigating) return;
+                    setIsNavigating(true);
+                    navigate("/place-order");
+                  }}
                 >
-                  PROCEED TO CHECKOUT
+                  {isNavigating ? "Redirecting..." : "PROCEED TO CHECKOUT"}
                 </button>
               </div>
             </div>

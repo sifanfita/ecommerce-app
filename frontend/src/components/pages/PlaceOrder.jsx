@@ -3,6 +3,7 @@ import Title from "../Title";
 import CartTotal from "../CartTotal";
 import CheckoutSteps from "../CheckoutSteps";
 import { ShopContext } from "../../context/ShopContext";
+import { LoaderSpinner } from "../Loader";
 
 function PlaceOrder() {
   const {
@@ -81,7 +82,7 @@ function PlaceOrder() {
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh]"
+      className={`flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] ${loading ? "pointer-events-none opacity-95" : ""}`}
     >
       <div className="flex flex-col gap-4 w-full sm:max-w-[480px]">
         <CheckoutSteps currentStep={2} />
@@ -204,10 +205,11 @@ function PlaceOrder() {
             <button
               type="submit"
               disabled={loading}
-              className={`bg-black text-white px-16 py-3 text-sm ${
-                loading ? "opacity-60 cursor-not-allowed" : ""
+              className={`flex items-center justify-center gap-2 bg-black text-white px-16 py-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none ${
+                loading ? "opacity-80" : ""
               }`}
             >
+              {loading && <LoaderSpinner className="w-4 h-4 border-white border-t-transparent" />}
               {loading ? "Placing Order..." : "PLACE ORDER"}
             </button>
           </div>

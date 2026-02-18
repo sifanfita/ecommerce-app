@@ -152,7 +152,7 @@ function Product() {
               <button
                 onClick={handleAddToCart}
                 disabled={!canAdd}
-                className='bg-black text-white px-8 py-3 mt-4 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'
+                className='bg-black text-white px-8 py-3 mt-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none flex items-center gap-2'
               >
                 {label}
                 {addingToCart && <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" aria-hidden />}

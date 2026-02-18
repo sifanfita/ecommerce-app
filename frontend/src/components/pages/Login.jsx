@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { ShopContext } from "../../context/ShopContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { LoaderSpinner } from "../Loader";
 
 function Login() {
   const [currentState, setCurrentState] = useState("Login");
@@ -84,7 +85,7 @@ function Login() {
   return (
     <form
       onSubmit={onSubmitHandler}
-      className="flex flex-col items-center w-[90%] sm:max-w-96 m-auto mt-14 gap-3 text-gray-800"
+      className={`flex flex-col items-center w-[90%] sm:max-w-96 m-auto mt-14 gap-3 text-gray-800 ${loading ? "pointer-events-none opacity-90" : ""}`}
     >
       <div className="inline-flex items-center gap-2 mb-2 mt-10">
         <p className="prata-regular text-3xl">{currentState}</p>
@@ -149,11 +150,13 @@ function Login() {
       </div>
 
       <button
+        type="submit"
         disabled={loading}
-        className={`bg-black text-white px-8 py-2 mt-4 ${
-          loading && "opacity-60 cursor-not-allowed"
+        className={`flex items-center justify-center gap-2 bg-black text-white px-8 py-2 mt-4 disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none transition-opacity ${
+          loading ? "opacity-80" : ""
         }`}
       >
+        {loading && <LoaderSpinner className="w-4 h-4 border-white border-t-transparent" />}
         {loading ? "Processing..." : currentState === "Login" ? "Sign In" : "Sign Up"}
       </button>
     </form>
