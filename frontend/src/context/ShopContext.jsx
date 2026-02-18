@@ -1,5 +1,6 @@
 import { createContext, useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 export const ShopContext = createContext();
 
@@ -9,6 +10,8 @@ const ShopContextProvider = (props) => {
   const delivery_fee = 100;
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+  const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -131,6 +134,7 @@ const ShopContextProvider = (props) => {
     backendUrl,
     token,
     setToken,
+    navigate,
   };
 
   return (
