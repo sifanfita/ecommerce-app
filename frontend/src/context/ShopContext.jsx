@@ -15,6 +15,8 @@ const ShopContextProvider = (props) => {
   const [showSearch, setShowSearch] = useState(false);
 
   const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [productsError, setProductsError] = useState("");
   const [token, setToken] = useState(() => sessionStorage.getItem("token") || "");
 
   const [cartItems, setCartItems] = useState({});
@@ -48,11 +50,36 @@ const ShopContextProvider = (props) => {
   // ================= FETCH PRODUCTS =================
   useEffect(() => {
     const fetchProducts = async () => {
+      setProductsLoading(true);
       try {
+        if (!backendUrl) {
+          setProducts([]);
+          setProductsError("Backend URL not configured");
+          toast.error("Backend URL is not configured. Set VITE_BACKEND_URL in your frontend .env file.");
+          return;
+        }
+
+        setProductsError("");
+
         const response = await axios.get(`${backendUrl}/api/product/list`);
-        if (response.data.success) setProducts(response.data.data);
+        if (response.data.success) {
+          setProducts(Array.isArray(response.data.data) ? response.data.data : []);
+        } else {
+          setProducts([]);
+          setProductsError(response.data.message || "Failed to load products");
+          toast.error(response.data.message || "Failed to load products");
+        }
       } catch (error) {
         console.log(error);
+        setProducts([]);
+        const msg =
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to load products";
+        setProductsError(msg);
+        toast.error(msg);
+      } finally {
+        setProductsLoading(false);
       }
     };
 
@@ -271,6 +298,8 @@ const ShopContextProvider = (props) => {
 
   const value = {
     products,
+    productsLoading,
+    productsError,
     currency,
     delivery_fee,
     search,

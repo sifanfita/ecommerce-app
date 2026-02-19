@@ -4,7 +4,7 @@ import Title from './Title'
 import ProductItem from './ProductItem'
 
 const BestSeller = () => {
-  const { products } = useContext(ShopContext)
+  const { products, productsLoading } = useContext(ShopContext)
 
   const [bestSeller, setBestSeller] = useState([])
   const [loading, setLoading] = useState(true)
@@ -17,18 +17,18 @@ const BestSeller = () => {
   }
 
   useEffect(() => {
-    if (!Array.isArray(products) || products.length === 0) {
+    if (productsLoading) {
       setLoading(true)
       return
     }
 
-    const bestProducts = products
+    const bestProducts = (Array.isArray(products) ? products : [])
       .filter(item => item.bestSeller && hasStock(item)) // 🔥 FIX HERE
       .slice(0, 5)
 
     setBestSeller(bestProducts)
     setLoading(false)
-  }, [products])
+  }, [products, productsLoading])
 
   return (
     <div className='my-10'>

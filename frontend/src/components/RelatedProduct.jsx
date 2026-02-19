@@ -4,20 +4,20 @@ import Title from './Title'
 import ProductItem from './ProductItem'
 
 const RelatedProduct = ({ category }) => {
-  const { products } = useContext(ShopContext)
+  const { products, productsLoading } = useContext(ShopContext)
   const [related, setRelated] = useState([])
   const [loading, setLoading] = useState(true)  // 👈 NEW
 
   useEffect(() => {
-    if (!Array.isArray(products) || products.length === 0) {
+    if (productsLoading) {
       setLoading(true)
       return
     }
 
-    const filtered = products.filter(item => item.category === category)
+    const filtered = (Array.isArray(products) ? products : []).filter(item => item.category === category)
     setRelated(filtered.slice(0, 5))
     setLoading(false)
-  }, [products, category])
+  }, [products, productsLoading, category])
 
   return (
     <div className='my-24'>

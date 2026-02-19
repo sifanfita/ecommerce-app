@@ -6,7 +6,7 @@ import ProductItem from '../ProductItem'
 import Loader from '../Loader'
 
 function Collection() {
-  const { products, search, showSearch } = useContext(ShopContext)
+  const { products, search, showSearch, productsLoading, productsError } = useContext(ShopContext)
 
   const [showFilter, setShowFilter] = useState(false)
   const [filterProducts, setFilterProducts] = useState([])
@@ -71,12 +71,13 @@ function Collection() {
   }
 
   useEffect(() => {
-    if (!Array.isArray(products) || products.length === 0) {
+    if (productsLoading) {
       setLoading(true)
-    } else {
-      applyFilter()
-      setLoading(false)
+      return
     }
+
+    applyFilter()
+    setLoading(false)
   }, [products, category, search, showSearch])
 
   useEffect(() => {
@@ -137,7 +138,11 @@ function Collection() {
           <p className='text-gray-500 text-sm mb-3'>Use the search icon in the navbar to search products.</p>
         )}
 
-        {loading ? (
+        {productsError ? (
+          <div className="text-center text-red-500 py-10">
+            {productsError}
+          </div>
+        ) : loading ? (
           <Loader message="Loading products..." className="py-10" />
         ) : filterProducts.length === 0 ? (
           <div className='text-center text-gray-400 py-10'>

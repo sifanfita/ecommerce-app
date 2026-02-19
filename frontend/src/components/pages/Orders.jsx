@@ -32,6 +32,7 @@ function Orders() {
         response.data.orders.forEach((order) => {
           order.items.forEach((item) => {
             const productInfo = products.find((p) => p._id === item.itemId);
+
             const orderImageUrl =
               (Array.isArray(item.image) ? item.image[0] : item.image) || "";
 
@@ -40,9 +41,10 @@ function Orders() {
               status: order.status,
               paymentProof: order.paymentProof,
               date: order.date,
-              name: productInfo?.name || "Unknown Product",
+              // Prefer current product info, but fall back to the snapshot stored in the order
+              name: productInfo?.name || item.name || "Unknown Product",
               image: productInfo?.image?.[0] || orderImageUrl || '',
-              price: productInfo?.price || 0,
+              price: productInfo?.price ?? item.price ?? 0,
             });
           });
         });

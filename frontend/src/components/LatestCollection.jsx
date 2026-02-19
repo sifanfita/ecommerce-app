@@ -4,7 +4,7 @@ import Title from './Title'
 import ProductItem from './ProductItem'
 
 const LatestCollection = () => {
-  const { products } = useContext(ShopContext)
+  const { products, productsLoading } = useContext(ShopContext)
 
   const [latestProducts, setLatestProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -17,18 +17,18 @@ const LatestCollection = () => {
   }
 
   useEffect(() => {
-    if (!Array.isArray(products) || products.length === 0) {
+    if (productsLoading) {
       setLoading(true)
       return 
     }
 
-    const availableProducts = products
+    const availableProducts = (Array.isArray(products) ? products : [])
       .filter(item => hasStock(item)) // 🔥 FIX HERE
       .slice(0, 10)
 
     setLatestProducts(availableProducts)
     setLoading(false)
-  }, [products])
+  }, [products, productsLoading])
 
   return (
     <div className='my-10'>
