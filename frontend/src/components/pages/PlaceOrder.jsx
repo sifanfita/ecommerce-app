@@ -4,11 +4,13 @@ import CartTotal from "../CartTotal";
 import CheckoutSteps from "../CheckoutSteps";
 import { ShopContext } from "../../context/ShopContext";
 import { LoaderSpinner } from "../Loader";
+import { validateEmail, validatePhone } from "../../utils/validation";
+import { toast } from "react-toastify";
 
 function PlaceOrder() {
   const {
-    paymentProof,
-    setPaymentProof,
+   
+    
     handlePlaceOrder,
     deliveryInfo,
     setDeliveryInfo,
@@ -18,6 +20,7 @@ function PlaceOrder() {
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [paymentProof, setPaymentProof] = useState(null);
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -41,6 +44,10 @@ function PlaceOrder() {
     // live validation
     if (!value.trim()) {
       setErrors((prev) => ({ ...prev, [name]: "This field is required" }));
+    } else if (name === "email") {
+      setErrors((prev) => ({ ...prev, [name]: validateEmail(value) || "" }));
+    } else if (name === "phone") {
+      setErrors((prev) => ({ ...prev, [name]: validatePhone(value) || "" }));
     } else {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -51,6 +58,12 @@ function PlaceOrder() {
     requiredFields.forEach((field) => {
       if (!deliveryInfo[field]?.trim()) {
         newErrors[field] = "This field is required";
+      } else if (field === "email") {
+        const msg = validateEmail(deliveryInfo[field]);
+        if (msg) newErrors[field] = msg;
+      } else if (field === "phone") {
+        const msg = validatePhone(deliveryInfo[field]);
+        if (msg) newErrors[field] = msg;
       }
     });
 
@@ -64,11 +77,14 @@ function PlaceOrder() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validate()) {
+      toast.error("Please fill all required fields and upload payment proof.");
+      return;
+    }
 
     try {
       setLoading(true);
-      await handlePlaceOrder();
+      await handlePlaceOrder(paymentProof);
     } finally {
       setLoading(false);
     }
@@ -132,6 +148,7 @@ function PlaceOrder() {
           <div key={field}>
             <input
               name={field}
+              type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
               value={deliveryInfo[field]}
               onChange={handleChange}
               className={inputClass(field)}

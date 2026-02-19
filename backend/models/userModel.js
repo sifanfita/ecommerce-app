@@ -32,6 +32,12 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin", "shopkeeper"],
       default: "user",
     },
+
+    // Used by cartController/orderController
+    cartData: {
+      type: Object,
+      default: {},
+    },
   },
   { timestamps: true }
 );

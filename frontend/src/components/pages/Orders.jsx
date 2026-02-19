@@ -5,6 +5,7 @@ import Title from '../Title';
 import Loader from '../Loader';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import placeholder from '../../assets/placeholder.jpg';
 
 function Orders() {
   const { backendUrl, token, currency, products } = useContext(ShopContext);
@@ -31,6 +32,8 @@ function Orders() {
         response.data.orders.forEach((order) => {
           order.items.forEach((item) => {
             const productInfo = products.find((p) => p._id === item.itemId);
+            const orderImageUrl =
+              (Array.isArray(item.image) ? item.image[0] : item.image) || "";
 
             allOrdersItem.push({
               ...item,
@@ -38,7 +41,7 @@ function Orders() {
               paymentProof: order.paymentProof,
               date: order.date,
               name: productInfo?.name || "Unknown Product",
-              image: productInfo?.image?.[0] || '',
+              image: productInfo?.image?.[0] || orderImageUrl || '',
               price: productInfo?.price || 0,
             });
           });
@@ -78,7 +81,8 @@ function Orders() {
               <div className="flex items-start gap-6 text-sm">
                 <img
                   className="w-16 sm:w-20"
-                  src={item.image || '/placeholder.png'}
+                  src={item.image || placeholder}
+                  onError={(e) => (e.currentTarget.src = placeholder)}
                   alt={item.name}
                 />
                 <div>

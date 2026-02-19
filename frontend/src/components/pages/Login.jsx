@@ -3,6 +3,7 @@ import { ShopContext } from "../../context/ShopContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { LoaderSpinner } from "../Loader";
+import { validateEmail, validatePhone, validatePassword, validateName } from "../../utils/validation";
 
 function Login() {
   const [currentState, setCurrentState] = useState("Login");
@@ -19,14 +20,27 @@ function Login() {
   const validate = () => {
     const newErrors = {};
 
-    if (currentState === "Sign Up" && !name.trim())
-      newErrors.name = "Name is required";
+    if (currentState === "Sign Up") {
+      const nameErr = validateName(name, true);
+      if (nameErr) newErrors.name = nameErr;
+    }
 
-    if (!email.trim() && !phone.trim())
-      newErrors.contact = "Email or phone is required";
+    const hasEmail = email.trim().length > 0;
+    const hasPhone = phone.trim().length > 0;
+    if (!hasEmail && !hasPhone) {
+      newErrors.contact = "Email or phone is required.";
+    } else {
+      const emailErr = hasEmail ? validateEmail(email) : null;
+      const phoneErr = hasPhone ? validatePhone(phone) : null;
+      if (emailErr) newErrors.contact = emailErr;
+      else if (phoneErr) newErrors.contact = phoneErr;
+    }
 
-    if (!password.trim())
-      newErrors.password = "Password is required";
+    const passwordErr = validatePassword(password, {
+      minLength: 6,
+      required: true,
+    });
+    if (passwordErr) newErrors.password = passwordErr;
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -106,6 +120,8 @@ function Login() {
       )}
 
       <input
+        type="email"
+        autoComplete="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         className={inputStyle("contact")}
@@ -114,6 +130,8 @@ function Login() {
       />
 
       <input
+        type="tel"
+        autoComplete="tel"
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
         className={inputStyle("contact")}
@@ -127,6 +145,8 @@ function Login() {
 
       <input
         type="password"
+        autoComplete={currentState === "Sign Up" ? "new-password" : "current-password"}
+        minLength={6}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         className={inputStyle("password")}

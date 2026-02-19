@@ -14,17 +14,24 @@ function Cart() {
   const [cartData, setCartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [removingKey, setRemovingKey] = useState(null);
 
-  // Helper to get stock from nested colors/sizes
-  const getAvailableStock = (product, sizeKey) => {
-    const [color, size] = sizeKey.split("-");
-    const colorObj = product.colors.find((c) => c.color === color);
+  // ✅ Get stock from product
+  const getAvailableStock = (product, color, size) => {
+    const normalizedColor = String(color || "").trim().toLowerCase();
+    const normalizedSize = String(size || "").trim().toLowerCase();
+
+    const colorObj = product.colors?.find(
+      (c) => String(c.color || "").trim().toLowerCase() === normalizedColor
+    );
     if (!colorObj) return 0;
-    const sizeObj = colorObj.sizes.find((s) => s.size === size);
+
+    const sizeObj = colorObj.sizes?.find(
+      (s) => String(s.size || "").trim().toLowerCase() === normalizedSize
+    );
     return sizeObj?.stock || 0;
   };
 
+  // ✅ Convert nested cartItems → flat cartData
   useEffect(() => {
     if (!products || products.length === 0) {
       setLoading(true);
@@ -32,14 +39,20 @@ function Cart() {
     }
 
     const tempData = [];
-    for (const items in cartItems) {
-      for (const item in cartItems[items]) {
-        if (cartItems[items][item] > 0) {
-          tempData.push({
-            _id: items,
-            size: item,
-            quantity: cartItems[items][item],
-          });
+
+    for (const productId in cartItems) {
+      for (const color in cartItems[productId]) {
+        for (const size in cartItems[productId][color]) {
+          const quantity = cartItems[productId][color][size];
+
+          if (quantity > 0) {
+            tempData.push({
+              _id: productId,
+              color,
+              size,
+              quantity,
+            });
+          }
         }
       }
     }
@@ -55,6 +68,7 @@ function Cart() {
   return (
     <div className="pt-14">
       <CheckoutSteps currentStep={1} />
+
       <div className="text-2xl mb-3">
         <Title text1={"YOUR"} text2={"CART"} />
       </div>
@@ -73,95 +87,114 @@ function Cart() {
         <div>
           {cartData.map((item, index) => {
             const productData = products.find(
-              (product) => product._id.toString() === item._id.toString()
+              (p) => p._id.toString() === item._id.toString()
             );
+
             if (!productData) return null;
 
-            const availableStock = getAvailableStock(productData, item.size);
+            const availableStock = getAvailableStock(
+              productData,
+              item.color,
+              item.size
+            );
 
             return (
               <div
                 key={index}
                 className="py-4 border-t text-gray-700 grid grid-cols-[4fr_0.5fr_0.5fr] sm:grid-cols-[4fr_2fr_0.5fr] items-center gap-4"
               >
+                {/* Product Info */}
                 <div className="flex items-start gap-6">
                   <img
                     className="w-16 sm:w-20"
                     src={productData?.image?.[0] || ""}
                     alt={productData.name}
                   />
+
                   <div>
                     <p className="text-xs sm:text-lg font-medium">
                       {productData.name}
                     </p>
+
                     <div className="flex items-center gap-5 mt-2">
                       <p>
                         {currency} {productData.price}
                       </p>
-                      <p className="px-2 sm:px-3 sm:py-1 border bg-slate-50">
-                        {item.size}
+
+                      <p className="px-2 py-1 border bg-slate-50">
+                        {item.color} / {item.size}
                       </p>
                     </div>
                   </div>
                 </div>
 
+                {/* Quantity */}
                 <input
-                  onChange={(e) => {
-                    let val = Number(e.target.value);
-                    if (val >= 1) {
-                      if (val > availableStock) val = availableStock; // cap at stock
-                      updateQuantity(item._id, item.size, val);
-                    } else if (e.target.value === "" || val === 0) {
-                      updateQuantity(item._id, item.size, 0);
-                    }
-                  }}
-                  className="border max-w-10 sm:max-w-20 px-1 sm:px-2 py-1"
                   type="number"
                   min={1}
                   max={availableStock}
                   value={item.quantity}
-                />
+                  className="border max-w-16 sm:max-w-20 px-2 py-1"
+                  onChange={(e) => {
+                    let val = Number(e.target.value);
 
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const key = `${item._id}-${item.size}`;
-                    if (removingKey) return;
-                    setRemovingKey(key);
-                    try {
-                      await updateQuantity(item._id, item.size, 0);
-                    } finally {
-                      setRemovingKey(null);
+                    if (val >= 1) {
+                      if (val > availableStock) val = availableStock;
+
+                      updateQuantity(
+                        item._id,
+                        item.color,
+                        item.size,
+                        val
+                      );
+                    } else {
+                      updateQuantity(
+                        item._id,
+                        item.color,
+                        item.size,
+                        0
+                      );
                     }
                   }}
-                  disabled={removingKey === `${item._id}-${item.size}`}
-                  className="p-2 mr-2 -m-2 rounded disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none hover:bg-red-50 transition-colors"
-                  aria-label="Remove item from cart"
-                >
-                  {removingKey === `${item._id}-${item.size}` ? (
-                    <span className="inline-block w-4 h-4 sm:w-5 sm:h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" aria-hidden />
-                  ) : (
-                    <img className="w-4 sm:w-5" src={assets.trashBin} alt="" aria-hidden />
-                  )}
-                </button>
+                />
+
+                {/* Remove */}
+                <img
+                  onClick={() =>
+                    updateQuantity(
+                      item._id,
+                      item.color,
+                      item.size,
+                      0
+                    )
+                  }
+                  className="w-4 mr-4 sm:w-5 cursor-pointer"
+                  src={assets.trashBin}
+                  alt="Remove"
+                />
               </div>
             );
           })}
 
+          {/* Checkout */}
           <div className="flex justify-end my-20">
             <div className="w-full sm:w-[450px]">
               <CartTotal />
+
               <div className="w-full text-end">
                 <button
-                  className="flex items-center justify-center gap-2 bg-black text-white text-sm my-8 px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="bg-black text-white text-sm my-8 px-8 py-3 disabled:opacity-50"
                   disabled={cartData.length === 0 || isNavigating}
                   onClick={() => {
                     if (isNavigating) return;
+
                     setIsNavigating(true);
                     navigate("/place-order");
                   }}
                 >
-                  {isNavigating ? "Redirecting..." : "PROCEED TO CHECKOUT"}
+                  {isNavigating
+                    ? "Redirecting..."
+                    : "PROCEED TO CHECKOUT"}
                 </button>
               </div>
             </div>
