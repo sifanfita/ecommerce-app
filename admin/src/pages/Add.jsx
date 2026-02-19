@@ -24,10 +24,14 @@ const Add = ({ token }) => {
   // Colors & Sizes per color
   const [colors, setColors] = useState([{ color: "", sizes: [] }]);
 
+  const [submitting, setSubmitting] = useState(false);
+
   // Submit handler
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     try {
+      setSubmitting(true);
       const formData = new FormData();
       formData.append("name", name);
       formData.append("description", description);
@@ -67,6 +71,8 @@ const Add = ({ token }) => {
     } catch (error) {
       console.log(error);
       toast.error(error.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -241,9 +247,10 @@ const Add = ({ token }) => {
 
       <button
         type="submit"
-        className="w-28 py-3 mt-4 bg-black text-white"
+        disabled={submitting}
+        className="w-28 py-3 mt-4 bg-black text-white disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        ADD
+        {submitting ? "ADDING..." : "ADD"}
       </button>
     </form>
   );
