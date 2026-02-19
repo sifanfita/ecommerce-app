@@ -6,9 +6,12 @@ import { toast } from 'react-toastify';
 const Login = ({ setToken }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+    if (loading) return;
+    setLoading(true);
     try {
       const response = await axios.post(backendUrl + '/api/user/admin/login', {
         email,
@@ -27,6 +30,8 @@ const Login = ({ setToken }) => {
     } catch (error) {
       console.error('Login error:', error);
       toast.error(error.response?.data?.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,7 +44,7 @@ const Login = ({ setToken }) => {
         <input type="text" name="fake-email" style={{ display: 'none' }} autoComplete="off" />
         <input type="password" name="fake-password" style={{ display: 'none' }} autoComplete="off" />
 
-        <form onSubmit={onSubmitHandler} className="flex flex-col gap-5">
+        <form onSubmit={onSubmitHandler} className={`flex flex-col gap-5 ${loading ? 'pointer-events-none opacity-90' : ''}`}>
           <div className="min-w-72">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Email Address
@@ -74,9 +79,11 @@ const Login = ({ setToken }) => {
 
           <button
             type="submit"
-            className="mt-2 w-full py-3 px-4 rounded-lg text-white bg-black hover:bg-gray-800 transition duration-200 font-medium"
+            disabled={loading}
+            className="mt-2 w-full py-3 px-4 rounded-lg text-white bg-black hover:bg-gray-800 transition duration-200 font-medium flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
           >
-            Login
+            {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden />}
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
       </div>

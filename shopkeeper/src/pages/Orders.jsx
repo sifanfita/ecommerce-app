@@ -12,6 +12,7 @@ const Orders = ({ token }) => {
   const [searchText, setSearchText] = useState("");
   const [filterStartDate, setFilterStartDate] = useState(null);
   const [filterEndDate, setFilterEndDate] = useState(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
   // Fetch orders
   const fetchOrders = async () => {
@@ -37,6 +38,8 @@ const Orders = ({ token }) => {
 
   // Update order status
   const updateStatus = async (orderId, newStatus) => {
+    if (updatingOrderId) return;
+    setUpdatingOrderId(orderId);
     try {
       const response = await axios.post(
         backendUrl + "/api/order/status",
@@ -54,6 +57,8 @@ const Orders = ({ token }) => {
       }
     } catch (error) {
       toast.error(error.message);
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -97,11 +102,13 @@ const Orders = ({ token }) => {
         ),
         Cell: ({ cell }) => {
           const order = cell.row.original;
+          const isUpdating = updatingOrderId === order._id;
           return (
             <select
-              className="border px-2 py-1"
+              className="border px-2 py-1 disabled:opacity-60 disabled:cursor-not-allowed"
               value={order.status}
               onChange={(e) => updateStatus(order._id, e.target.value)}
+              disabled={isUpdating}
             >
               <option value="Order placed">Order placed</option>
               <option value="Processing">Processing</option>
@@ -122,7 +129,7 @@ const Orders = ({ token }) => {
           }),
       },
     ],
-    []
+    [updatingOrderId]
   );
 
   // Filter orders by search text and date

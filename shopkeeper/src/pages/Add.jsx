@@ -23,10 +23,13 @@ const Add = ({ token }) => {
 
   // Colors & Sizes per color
   const [colors, setColors] = useState([{ color: "", sizes: [] }]);
+  const [loading, setLoading] = useState(false);
 
   // Submit handler
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+    if (loading) return;
+    setLoading(true);
     try {
       const formData = new FormData();
       formData.append("name", name);
@@ -67,13 +70,15 @@ const Add = ({ token }) => {
     } catch (error) {
       console.log(error);
       toast.error(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <form
       onSubmit={onSubmitHandler}
-      className="flex flex-col w-full items-start gap-3"
+      className={`flex flex-col w-full items-start gap-3 ${loading ? 'pointer-events-none opacity-95' : ''}`}
     >
       {/* Images */}
       <div>
@@ -241,9 +246,11 @@ const Add = ({ token }) => {
 
       <button
         type="submit"
-        className="w-28 py-3 mt-4 bg-black text-white"
+        disabled={loading}
+        className="w-28 py-3 mt-4 bg-black text-white flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
       >
-        ADD
+        {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden />}
+        {loading ? 'Adding...' : 'ADD'}
       </button>
     </form>
   );

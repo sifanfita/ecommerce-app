@@ -3,19 +3,22 @@ import axios from "axios";
 import { backendUrl } from "../App";
 import { toast } from "react-toastify";
 
-const CreateShopkeeperModal = ({ token, onClose = () => console.log("onClose called"), refresh }) => {
+const CreateShopkeeperModal = ({ token, onClose = () => {}, refresh }) => {
   const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async () => {
+    if (loading) return;
+    setLoading(true);
     try {
       const res = await axios.post(
         `${backendUrl}/api/user/admin/shopkeeper/create`,
@@ -34,6 +37,8 @@ const CreateShopkeeperModal = ({ token, onClose = () => console.log("onClose cal
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to create shopkeeper");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,16 +54,18 @@ const CreateShopkeeperModal = ({ token, onClose = () => console.log("onClose cal
         <h2 className="font-semibold text-xl mb-6">Create New Shopkeeper</h2>
 
         <input
-          className="border border-gray-300 p-3 w-full mb-4 rounded focus:outline-none focus:ring-2 focus:ring-black"
+          className="border border-gray-300 p-3 w-full mb-4 rounded focus:outline-none focus:ring-2 focus:ring-black disabled:opacity-70"
           placeholder="Full Name"
+          disabled={loading}
           name="name"
           value={form.name}
           onChange={handleChange}
         />
 
         <input
-          className="border border-gray-300 p-3 w-full mb-4 rounded focus:outline-none focus:ring-2 focus:ring-black"
+          className="border border-gray-300 p-3 w-full mb-4 rounded focus:outline-none focus:ring-2 focus:ring-black disabled:opacity-70"
           placeholder="Email Address"
+          disabled={loading}
           name="email"
           type="email"
           autoComplete="new-email"
@@ -69,8 +76,9 @@ const CreateShopkeeperModal = ({ token, onClose = () => console.log("onClose cal
         
 
         <input
-          className="border border-gray-300 p-3 w-full mb-6 rounded focus:outline-none focus:ring-2 focus:ring-black"
+          className="border border-gray-300 p-3 w-full mb-6 rounded focus:outline-none focus:ring-2 focus:ring-black disabled:opacity-70"
           placeholder="Password"
+          disabled={loading}
           name="password"
           type="password"
           autoComplete="new-password"
@@ -80,19 +88,21 @@ const CreateShopkeeperModal = ({ token, onClose = () => console.log("onClose cal
 
         <div className="flex justify-end gap-3">
           <button
-            onClick={() => {
-              console.log("Cancel button clicked"); // ← Debug log
-              onClose(); // This MUST be called
-            }}
-            className="px-6 py-2 border border-gray-300 rounded hover:bg-gray-100 transition"
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="px-6 py-2 border border-gray-300 rounded hover:bg-gray-100 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleSubmit}
-            className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800 transition"
+            disabled={loading}
+            className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800 transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
           >
-            Create
+            {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden />}
+            {loading ? 'Creating...' : 'Create'}
           </button>
         </div>
       </div>

@@ -8,6 +8,7 @@ import CreateShopkeeperModal from "./CreateShopkeeperModal";
 const AdminShopkeepers = ({ token }) => {
   const [shopkeepers, setShopkeepers] = useState([]);
   const [openModal, setOpenModal] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   const fetchShopkeepers = async () => {
     try {
@@ -32,7 +33,8 @@ const AdminShopkeepers = ({ token }) => {
 
   const deleteShopkeeper = async (id) => {
     if (!window.confirm("Delete this shopkeeper?")) return;
-
+    if (deletingId) return;
+    setDeletingId(id);
     try {
       const res = await axios.delete(
         `${backendUrl}/api/user/admin/shopkeeper/${id}`,
@@ -45,6 +47,8 @@ const AdminShopkeepers = ({ token }) => {
       }
     } catch {
       toast.error("Delete failed");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -81,14 +85,20 @@ const AdminShopkeepers = ({ token }) => {
         enablePagination
         enableColumnFilters
         enableRowActions
-        renderRowActions={({ row }) => (
-          <button
-            className="text-red-600"
-            onClick={() => deleteShopkeeper(row.original._id)}
-          >
-            Delete
-          </button>
-        )}
+        renderRowActions={({ row }) => {
+          const id = row.original._id;
+          const isDeleting = deletingId === id;
+          return (
+            <button
+              className="text-red-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none flex items-center gap-2"
+              onClick={() => deleteShopkeeper(id)}
+              disabled={isDeleting}
+            >
+              {isDeleting && <span className="w-3 h-3 border-2 border-red-600 border-t-transparent rounded-full animate-spin" aria-hidden />}
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </button>
+          );
+        }}
         initialState={{ pagination: { pageSize: 10 } }}
       />
 
