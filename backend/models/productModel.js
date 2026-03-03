@@ -34,7 +34,7 @@ export const createProduct = async (data) => {
       price,
       image,
       category,
-      colors,
+      JSON.stringify(colors ?? []),
       Boolean(bestSeller),
       date,
     ]
@@ -66,7 +66,7 @@ export const updateProductColors = async (id, colors) => {
      SET colors = $1
      WHERE id = $2
      RETURNING *`,
-    [colors, id]
+    [JSON.stringify(colors ?? []), id]
   );
   return mapProductRow(rows[0]);
 };
