@@ -4,8 +4,8 @@ const mapOrderRow = (row) => {
   if (!row) return null;
   return {
     ...row,
-    _id: row.id,
-    userId: row.user_id,
+    _id: String(row.id),
+    userId: String(row.user_id),
     items: row.items || [],
     amount: Number(row.amount),
     address: row.address || {},

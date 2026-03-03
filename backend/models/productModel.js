@@ -4,7 +4,7 @@ const mapProductRow = (row) => {
   if (!row) return null;
   return {
     ...row,
-    _id: row.id,
+    _id: String(row.id),
     image: row.image || [],
     colors: row.colors || [],
   };

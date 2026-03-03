@@ -4,7 +4,7 @@ const mapUserRow = (row) => {
   if (!row) return null;
   return {
     ...row,
-    _id: row.id,
+    _id: String(row.id),
     cartData: row.cart_data || {},
   };
 };
@@ -41,7 +41,7 @@ export const findUsersByRole = async (role) => {
   );
   return rows.map((row) => ({
     ...row,
-    _id: row.id,
+    _id: String(row.id),
   }));
 };
 
