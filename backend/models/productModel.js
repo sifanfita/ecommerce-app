@@ -1,45 +1,73 @@
-import mongoose from "mongoose";
+import { getPool } from "../config/postgres.js";
 
-const productSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  description: { type: String, required: true },
-  price: { type: Number, required: true },
-  image: { type: Array, required: true },
-  category: { type: String, required: true },
+const mapProductRow = (row) => {
+  if (!row) return null;
+  return {
+    ...row,
+    _id: row.id,
+    image: row.image || [],
+    colors: row.colors || [],
+  };
+};
 
-  colors: [
-    {
-      color: { type: String, required: true },
-      sizes: [
-        {
-          size: { type: String, required: true },
-          stock: { type: Number, required: true, min: 0 },
-        },
-      ],
-    },
-  ],
+export const createProduct = async (data) => {
+  const pool = await getPool();
+  const {
+    name,
+    description,
+    price,
+    image,
+    category,
+    colors,
+    bestSeller,
+    date,
+  } = data;
 
-  bestSeller: { type: Boolean, default: false },
-  date: { type: Number, required: true },
-});
+  const { rows } = await pool.query(
+    `INSERT INTO products
+      (name, description, price, image, category, colors, best_seller, date)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     RETURNING *`,
+    [
+      name,
+      description,
+      price,
+      image,
+      category,
+      colors,
+      Boolean(bestSeller),
+      date,
+    ]
+  );
 
-/* 🔥 Virtual total stock */
-productSchema.virtual("totalStock").get(function () {
-  let total = 0;
+  return mapProductRow(rows[0]);
+};
 
-  this.colors.forEach((color) => {
-    color.sizes.forEach((size) => {
-      total += size.stock;
-    });
-  });
+export const getAllProducts = async () => {
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    "SELECT * FROM products ORDER BY date DESC"
+  );
+  return rows.map(mapProductRow);
+};
 
-  return total;
-});
+export const getProductById = async (id) => {
+  const pool = await getPool();
+  const { rows } = await pool.query("SELECT * FROM products WHERE id = $1", [
+    id,
+  ]);
+  return mapProductRow(rows[0]);
+};
 
-productSchema.set("toJSON", { virtuals: true });
-productSchema.set("toObject", { virtuals: true });
+export const updateProductColors = async (id, colors) => {
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    `UPDATE products
+     SET colors = $1
+     WHERE id = $2
+     RETURNING *`,
+    [colors, id]
+  );
+  return mapProductRow(rows[0]);
+};
 
-const productModel =
-  mongoose.models.product || mongoose.model("product", productSchema);
-
-export default productModel;

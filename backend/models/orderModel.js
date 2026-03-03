@@ -1,47 +1,64 @@
-import mongoose from "mongoose";
+import { getPool } from "../config/postgres.js";
 
-const orderSchema = new mongoose.Schema({
-  userId: { type: String, required: true },
+const mapOrderRow = (row) => {
+  if (!row) return null;
+  return {
+    ...row,
+    _id: row.id,
+    userId: row.user_id,
+    items: row.items || [],
+    amount: Number(row.amount),
+    address: row.address || {},
+    paymentProof: row.payment_proof,
+  };
+};
 
-  items: [
-    {
-      itemId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "product",
-        required: true,
-      },
-      name: { type: String, required: true },
-      price: { type: Number, required: true },
-      image: [{ type: String, required: true }],
-      quantity: { type: Number, required: true },
-      size: { type: String },
-      color: { type: String },   // <-- added
-    },
-  ],
+export const createOrder = async ({
+  userId,
+  items,
+  amount,
+  address,
+  paymentProof,
+  status = "Order placed",
+  date,
+}) => {
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    `INSERT INTO orders
+      (user_id, items, amount, address, status, payment_proof, date)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING *`,
+    [userId, items, amount, address, status, paymentProof, date]
+  );
+  return mapOrderRow(rows[0]);
+};
 
-  amount: { type: Number, required: true },
-  address: {
-  name: { type: String, required: true },
-  email: { type: String, required: true },
-  phone: { type: String, required: true },
-  street: { type: String, required: true },
-  city: { type: String, required: true },
-  state: { type: String, required: true },
-  
-},
+export const getAllOrders = async () => {
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    "SELECT * FROM orders ORDER BY date DESC"
+  );
+  return rows.map(mapOrderRow);
+};
 
-  status: {
-    type: String,
-    required: true,
-    default: "Order placed",
-  },
+export const getOrdersByUserId = async (userId) => {
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    "SELECT * FROM orders WHERE user_id = $1 ORDER BY date DESC",
+    [userId]
+  );
+  return rows.map(mapOrderRow);
+};
 
-  paymentProof: { type: String, default: "" },
+export const updateOrderStatusById = async (orderId, status) => {
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    `UPDATE orders
+     SET status = $1
+     WHERE id = $2
+     RETURNING *`,
+    [status, orderId]
+  );
+  return mapOrderRow(rows[0]);
+};
 
-  date: { type: Number, required: true },
-});
-
-const orderModel =
-  mongoose.models.order || mongoose.model("order", orderSchema);
-
-export default orderModel;

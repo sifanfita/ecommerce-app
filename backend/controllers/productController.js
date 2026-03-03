@@ -1,5 +1,10 @@
 import { v2 as cloudinary } from "cloudinary";
-import productModel from "../models/productModel.js";
+import {
+  createProduct,
+  getAllProducts,
+  getProductById,
+  updateProductColors,
+} from "../models/productModel.js";
 
 const addProduct = async (req, res) => {
   try {
@@ -57,9 +62,7 @@ const addProduct = async (req, res) => {
       image: imageUrls,
     };
 
-    // Save to DB
-    const product = new productModel(productData);
-    await product.save();
+    const product = await createProduct(productData);
 
     res.json({
       success: true,
@@ -81,7 +84,7 @@ const addProduct = async (req, res) => {
 // function for get all products (ONLY AVAILABLE ONES)
 const listProducts = async (req, res) => {
   try {
-    const products = await productModel.find({});
+    const products = await getAllProducts();
 
     // 🔥 Filter products with at least one size in stock
     const availableProducts = products.filter((product) => {
@@ -107,7 +110,7 @@ const listProducts = async (req, res) => {
 const singleProduct = async (req, res) => {
   try {
     const { id } = req.body;
-    const product = await productModel.findById(id);
+    const product = await getProductById(Number(id));
 
     if (!product) {
       return res.json({
@@ -145,24 +148,24 @@ const updateStock = async (req, res) => {
   try {
     const { productId, color, size, stock } = req.body;
 
-    const product = await productModel.findById(productId);
+    const product = await getProductById(Number(productId));
     if (!product) {
       return res.json({ success: false, message: "Product not found" });
     }
 
-    const colorEntry = product.colors.find(c => c.color === color);
+    const colorEntry = product.colors.find((c) => c.color === color);
     if (!colorEntry) {
       return res.json({ success: false, message: "Color not found" });
     }
 
-    const sizeEntry = colorEntry.sizes.find(s => s.size === size);
+    const sizeEntry = colorEntry.sizes.find((s) => s.size === size);
     if (!sizeEntry) {
       return res.json({ success: false, message: "Size not found" });
     }
 
     sizeEntry.stock = stock; // update stock number
 
-    await product.save();
+    await updateProductColors(product._id, product.colors);
 
     res.json({ success: true, message: "Stock updated successfully" });
   } catch (err) {

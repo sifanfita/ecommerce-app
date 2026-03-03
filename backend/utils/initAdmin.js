@@ -1,9 +1,10 @@
 import bcrypt from "bcrypt";
-import userModel from "../models/userModel.js";
+import { findUsersByRole, createUser } from "../models/userModel.js";
 
 const initAdmin = async () => {
   try {
-    const adminExists = await userModel.findOne({ role: "admin" });
+    const admins = await findUsersByRole("admin");
+    const adminExists = admins.length > 0;
 
     if (adminExists) {
       console.log("✅ Admin already exists");
@@ -15,7 +16,7 @@ const initAdmin = async () => {
       10
     );
 
-    await userModel.create({
+    await createUser({
       name: process.env.ADMIN_NAME,
       email: process.env.ADMIN_EMAIL,
       password: hashedPassword,

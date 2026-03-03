@@ -1,4 +1,11 @@
-import userModel from "../models/userModel.js";
+import {
+  findUserByEmail,
+  findUserByPhone,
+  findUserById,
+  findUsersByRole,
+  createUser,
+  deleteUserById,
+} from "../models/userModel.js";
 import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -18,10 +25,7 @@ const createToken = (user) => {
    HELPER: SAFE QUERY BUILDER
 =========================== */
 const buildQuery = (email, phone) => {
-  const query = [];
-  if (email) query.push({ email });
-  if (phone) query.push({ phone });
-  return query;
+  return { email, phone };
 };
 
 /* ===========================
@@ -37,7 +41,13 @@ const loginWithRole = async (req, res, allowedRole) => {
 
     const query = buildQuery(email, phone);
 
-    const user = await userModel.findOne({ $or: query });
+    let user = null;
+    if (query.email) {
+      user = await findUserByEmail(query.email);
+    }
+    if (!user && query.phone) {
+      user = await findUserByPhone(query.phone);
+    }
 
     if (!user) {
       return res.json({ success: false, message: "User not found" });
@@ -122,14 +132,20 @@ const registerUser = async (req, res) => {
 
     const query = buildQuery(email, phone);
 
-    const exists = await userModel.findOne({ $or: query });
+    let exists = null;
+    if (query.email) {
+      exists = await findUserByEmail(query.email);
+    }
+    if (!exists && query.phone) {
+      exists = await findUserByPhone(query.phone);
+    }
     if (exists) {
       return res.json({ success: false, message: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await userModel.create({
+    const user = await createUser({
       name,
       email,
       phone,
@@ -177,14 +193,17 @@ const createShopkeeper = async (req, res) => {
 
     const query = buildQuery(email);
 
-    const exists = await userModel.findOne({ $or: query });
+    let exists = null;
+    if (query.email) {
+      exists = await findUserByEmail(query.email);
+    }
     if (exists) {
       return res.json({ success: false, message: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const shopkeeper = await userModel.create({
+    const shopkeeper = await createUser({
       name,
       email,
       
@@ -208,9 +227,7 @@ const createShopkeeper = async (req, res) => {
 =========================== */
 const getShopkeepers = async (req, res) => {
   try {
-    const shopkeepers = await userModel
-      .find({ role: "shopkeeper" })
-      .select("-password");
+    const shopkeepers = await findUsersByRole("shopkeeper");
 
     res.json({ success: true, shopkeepers });
   } catch (error) {
@@ -225,16 +242,12 @@ const deleteShopkeeper = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const shopkeeper = await userModel.findOne({
-      _id: id,
-      role: "shopkeeper",
-    });
+    const shopkeeper = await findUserById(Number(id));
 
-    if (!shopkeeper) {
+    if (!shopkeeper || shopkeeper.role !== "shopkeeper") {
       return res.json({ success: false, message: "Shopkeeper not found" });
     }
-
-    await userModel.findByIdAndDelete(id);
+    await deleteUserById(Number(id));
 
     res.json({
       success: true,

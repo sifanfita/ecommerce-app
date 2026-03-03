@@ -1,6 +1,11 @@
-import orderModel from "../models/orderModel.js";
-import userModel from "../models/userModel.js";
-import productModel from "../models/productModel.js";
+import {
+  createOrder,
+  getAllOrders,
+  getOrdersByUserId,
+  updateOrderStatusById,
+} from "../models/orderModel.js";
+import { updateUserCart, findUserById } from "../models/userModel.js";
+import { getProductById, updateProductColors } from "../models/productModel.js";
 import { v2 as cloudinary } from "cloudinary";
 
 
@@ -9,7 +14,7 @@ import { v2 as cloudinary } from "cloudinary";
 // =======================
 const allOrders = async (req, res) => {
   try {
-    const orders = await orderModel.find({}).sort({ date: -1 });
+    const orders = await getAllOrders();
 
     res.json({
       success: true,
@@ -32,7 +37,7 @@ const userOrders = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const orders = await orderModel.find({ userId }).sort({ date: -1 });
+    const orders = await getOrdersByUserId(Number(userId));
 
     res.json({
       success: true,
@@ -55,7 +60,7 @@ const updateOrderStatus = async (req, res) => {
   try {
     const { orderId, status } = req.body;
 
-    await orderModel.findByIdAndUpdate(orderId, { status });
+    await updateOrderStatusById(Number(orderId), status);
 
     res.json({
       success: true,
@@ -110,7 +115,7 @@ const placeOrder = async (req, res) => {
     // ==========================
     for (const item of items) {
 
-      const product = await productModel.findById(item.itemId);
+      const product = await getProductById(Number(item.itemId));
 
       if (!product) {
         return res.json({
@@ -156,7 +161,7 @@ const placeOrder = async (req, res) => {
       // Reduce stock
       sizeData.stock -= item.quantity;
 
-      await product.save();
+      await updateProductColors(product._id, product.colors);
     }
 
 
@@ -164,7 +169,7 @@ const placeOrder = async (req, res) => {
     // 3️⃣ Create Order
     // ==========================
     const orderData = {
-      userId,
+      userId: Number(userId),
       items,
       amount,
       address,
@@ -173,14 +178,13 @@ const placeOrder = async (req, res) => {
       date: Date.now(),
     };
 
-    const newOrder = new orderModel(orderData);
-    await newOrder.save();
+    const newOrder = await createOrder(orderData);
 
 
     // ==========================
     // 4️⃣ Clear Cart
     // ==========================
-    await userModel.findByIdAndUpdate(userId, { cartData: {} });
+    await updateUserCart(Number(userId), {});
 
 
     // ==========================

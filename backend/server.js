@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
-import connectDB from './config/mongodb.js';
+import connectPostgres from './config/postgres.js';
 import connectCloudinary from './config/cloudinary.js';
 
 import userRouter from './routes/userRoute.js';
@@ -59,7 +59,7 @@ app.get('/', (req, res) => {
 // 🔐 START SERVER PROPERLY
 const startServer = async () => {
   try {
-    await connectDB();           // 1️⃣ Connect MongoDB
+    await connectPostgres();     // 1️⃣ Connect PostgreSQL
     await connectCloudinary();   // 2️⃣ Connect Cloudinary
     await initAdmin();           // 3️⃣ Initialize admin safely
 
