@@ -1,7 +1,7 @@
 import express from "express";
-import User from "../models/userModel.js"; // adjust path if needed
-import Order from "../models/orderModel.js"; // optional, if you want order counts
-import  adminOrShopkeeper  from "../middleware/adminOrShopkeeper.js"; // your admin auth middleware
+import { findUsersByRole, findUserById } from "../models/userModel.js";
+import { getOrdersByUserId } from "../models/orderModel.js";
+import adminOrShopkeeper from "../middleware/adminOrShopkeeper.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 
 const customerRouter = express.Router();
@@ -9,11 +9,11 @@ const customerRouter = express.Router();
 customerRouter.get("/", authMiddleware, adminOrShopkeeper, async (req, res) => {
   try {
 
-    const users = await User.find({}, "-password"); // exclude password
+    const users = await findUsersByRole("user");
 
     const customers = await Promise.all(
       users.map(async (user) => {
-        const orders = await Order.find({ userId: user._id });
+        const orders = await getOrdersByUserId(user._id);
 
         
         // Get phone from first order's address if exists
@@ -31,7 +31,7 @@ customerRouter.get("/", authMiddleware, adminOrShopkeeper, async (req, res) => {
           orders,
           ordersCount: orders.length,
           totalSpent: orders.reduce((sum, o) => sum + o.amount, 0),
-          joinedAt: user.createdAt || user._id.getTimestamp(),
+          joinedAt: user.created_at || null,
         };
       })
     );
