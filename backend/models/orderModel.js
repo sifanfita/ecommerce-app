@@ -66,7 +66,7 @@ export const createOrder = async ({
       (user_id, items, amount, address, status, payment_proof, date)
      VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
-    [userId, itemsJson, amount, addressJson, status, paymentProof, date]
+    [userId, itemsJson, Number(amount) || 0, addressJson, status, paymentProof, date]
   );
   return mapOrderRow(rows[0]);
 };

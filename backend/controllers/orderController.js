@@ -85,7 +85,13 @@ const placeOrder = async (req, res) => {
 
     const items = JSON.parse(req.body.items);
     const address = JSON.parse(req.body.address);
-    const amount = req.body.amount;
+
+    const rawAmount = req.body.amount;
+    const amountNumber = Number(rawAmount);
+    const amount =
+      Number.isFinite(amountNumber) && amountNumber > 0
+        ? Math.round(amountNumber)
+        : 0;
 
     const paymentProofFile = req.file;
 
