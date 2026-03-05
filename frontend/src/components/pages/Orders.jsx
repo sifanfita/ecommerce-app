@@ -12,6 +12,13 @@ function Orders() {
   const [orderData, setOrderData] = useState([]);
   const [loading, setLoading] = useState(false);   // 👈 NEW
 
+  const formatDate = (value) => {
+    if (!value) return "-";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString();
+  };
+
   const loadOrderData = async () => {
     try {
       if (!token) return;
@@ -99,7 +106,7 @@ function Orders() {
                   <p className="mt-2">
                     Date:{' '}
                     <span className="text-gray-400">
-                      {new Date(item.date).toLocaleDateString()}
+                      {formatDate(item.date)}
                     </span>
                   </p>
                 </div>
