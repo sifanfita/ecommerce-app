@@ -36,12 +36,13 @@ export const findUserById = async (id) => {
 export const findUsersByRole = async (role) => {
   const pool = await getPool();
   const { rows } = await pool.query(
-    "SELECT id, name, email, phone, role FROM users WHERE role = $1",
+    "SELECT id, name, email, phone, role, created_at FROM users WHERE role = $1",
     [role]
   );
   return rows.map((row) => ({
     ...row,
     _id: String(row.id),
+    createdAt: row.created_at,
   }));
 };
 
