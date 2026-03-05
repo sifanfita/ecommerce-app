@@ -90,13 +90,10 @@ function Cart() {
               (p) => p._id.toString() === item._id.toString()
             );
 
-            if (!productData) return null;
-
-            const availableStock = getAvailableStock(
-              productData,
-              item.color,
-              item.size
-            );
+            const productMissing = !productData;
+            const availableStock = productMissing
+              ? 0
+              : getAvailableStock(productData, item.color, item.size);
 
             return (
               <div
@@ -108,23 +105,35 @@ function Cart() {
                   <img
                     className="w-16 sm:w-20"
                     src={productData?.image?.[0] || ""}
-                    alt={productData.name}
+                    alt={productData?.name || "Unavailable product"}
                   />
 
                   <div>
                     <p className="text-xs sm:text-lg font-medium">
-                      {productData.name}
+                      {productData?.name || "Product no longer available"}
                     </p>
 
                     <div className="flex items-center gap-5 mt-2">
                       <p>
-                        {currency} {productData.price}
+                        {productMissing ? "-" : `${currency} ${productData.price}`}
                       </p>
 
                       <p className="px-2 py-1 border bg-slate-50">
                         {item.color} / {item.size}
                       </p>
                     </div>
+
+                    {productMissing && (
+                      <p className="mt-1 text-xs text-red-500">
+                        This product is no longer available. Please remove it from your cart.
+                      </p>
+                    )}
+
+                    {!productMissing && availableStock === 0 && (
+                      <p className="mt-1 text-xs text-red-500">
+                        This variant is out of stock. Please remove it or choose another option.
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -135,6 +144,7 @@ function Cart() {
                   max={availableStock}
                   value={item.quantity}
                   className="border max-w-16 sm:max-w-20 px-2 py-1"
+                  disabled={productMissing || availableStock === 0}
                   onChange={(e) => {
                     let val = Number(e.target.value);
 

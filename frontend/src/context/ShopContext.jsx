@@ -199,8 +199,9 @@ const ShopContextProvider = (props) => {
       for (const itemId in cartSource) {
         const product = products.find(p => p._id === itemId);
         if (!product) {
-          toast.error("One of the products in your cart is no longer available. Please refresh the page.");
-          return;
+          // Skip items whose product no longer exists in the current catalog
+          // but don't block the whole order.
+          continue;
         }
 
         for (const color in cartSource[itemId]) {
