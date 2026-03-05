@@ -175,7 +175,7 @@ const placeOrder = async (req, res) => {
       address,
       paymentProof: paymentProofUrl,
       status: "Processing",
-      date: Date.now(),
+      date: new Date().toISOString(), 
     };
 
     const newOrder = await createOrder(orderData);
