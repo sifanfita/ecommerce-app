@@ -38,7 +38,11 @@ const AdminShopkeepers = ({ token }) => {
     try {
       const res = await axios.delete(
         `${backendUrl}/api/user/admin/shopkeeper/${id}`,
-        { headers: { token } }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       if (res.data.success) {
