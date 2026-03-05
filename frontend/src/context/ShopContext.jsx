@@ -193,30 +193,17 @@ const ShopContextProvider = (props) => {
         return;
       }
 
-      // Clean up cart entries for products that no longer exist
-      const cleanedCart = {};
-      let removedStaleItems = false;
-
-      for (const itemId in cartItems) {
-        const product = products.find(p => p._id === itemId);
-        if (!product) {
-          removedStaleItems = true;
-          continue;
-        }
-        cleanedCart[itemId] = cartItems[itemId];
-      }
-
-      if (removedStaleItems) {
-        setCartItems(cleanedCart);
-        toast.info("Some unavailable products were removed from your cart.");
-      }
-
+      const cartSource = cartItems;
       const items = [];
 
-      for (const itemId in cleanedCart) {
+      for (const itemId in cartSource) {
         const product = products.find(p => p._id === itemId);
+        if (!product) {
+          toast.error("One of the products in your cart is no longer available. Please refresh the page.");
+          return;
+        }
 
-        for (const color in cleanedCart[itemId]) {
+        for (const color in cartSource[itemId]) {
           const colorObj = product.colors.find(
             c => c.color.trim().toLowerCase() === color.trim().toLowerCase()
           );
@@ -225,7 +212,7 @@ const ShopContextProvider = (props) => {
             return;
           }
 
-          for (const size in cleanedCart[itemId][color]) {
+          for (const size in cartSource[itemId][color]) {
             const sizeObj = colorObj.sizes.find(
               s => s.size.trim().toLowerCase() === size.trim().toLowerCase()
             );
@@ -234,7 +221,7 @@ const ShopContextProvider = (props) => {
               return;
             }
 
-            const quantity = cleanedCart[itemId][color][size];
+            const quantity = cartSource[itemId][color][size];
             if (quantity > sizeObj.stock) {
               toast.error(`Not enough stock for "${colorObj.color}" size "${sizeObj.size}" of product "${product.name}"`);
               return;
