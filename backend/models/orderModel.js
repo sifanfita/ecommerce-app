@@ -16,13 +16,24 @@ const mapOrderRow = (row) => {
       : typeof row.address === "string"
       ? JSON.parse(row.address)
       : row.address;
-
-  const normalizedDate =
-    row.date == null
-      ? null
-      : row.date instanceof Date
-      ? row.date.toISOString()
-      : String(row.date);
+  let normalizedDate = null;
+  if (row.date != null) {
+    if (row.date instanceof Date) {
+      normalizedDate = row.date.toISOString();
+    } else if (typeof row.date === "number") {
+      const d = new Date(row.date);
+      normalizedDate = Number.isNaN(d.getTime()) ? null : d.toISOString();
+    } else if (typeof row.date === "string") {
+      // Handle legacy millisecond timestamps stored as plain digits
+      if (/^\d+$/.test(row.date)) {
+        const d = new Date(Number(row.date));
+        normalizedDate = Number.isNaN(d.getTime()) ? null : d.toISOString();
+      } else {
+        const d = new Date(row.date);
+        normalizedDate = Number.isNaN(d.getTime()) ? null : d.toISOString();
+      }
+    }
+  }
 
   return {
     ...row,
