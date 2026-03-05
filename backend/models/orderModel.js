@@ -17,6 +17,13 @@ const mapOrderRow = (row) => {
       ? JSON.parse(row.address)
       : row.address;
 
+  const normalizedDate =
+    row.date == null
+      ? null
+      : row.date instanceof Date
+      ? row.date.toISOString()
+      : String(row.date);
+
   return {
     ...row,
     _id: String(row.id),
@@ -24,6 +31,7 @@ const mapOrderRow = (row) => {
     items: parsedItems,
     amount: Number(row.amount),
     address: parsedAddress,
+    date: normalizedDate,
     paymentProof: row.payment_proof,
   };
 };

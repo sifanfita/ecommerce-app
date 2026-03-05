@@ -14,6 +14,13 @@ const Orders = ({ token }) => {
   const [filterEndDate, setFilterEndDate] = useState(null);
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
+  const parseDate = (value) => {
+    if (!value) return null;
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return null;
+    return d;
+  };
+
   // Fetch orders
   const fetchOrders = async () => {
     try {
@@ -121,12 +128,15 @@ const Orders = ({ token }) => {
       {
         accessorKey: "date",
         header: "Date",
-        Cell: ({ cell }) =>
-          new Date(cell.getValue()).toLocaleDateString("en-US", {
+        Cell: ({ cell }) => {
+          const d = parseDate(cell.getValue());
+          if (!d) return "-";
+          return d.toLocaleDateString("en-US", {
             year: "numeric",
             month: "short",
             day: "numeric",
-          }),
+          });
+        },
       },
     ],
     [updatingOrderId]
@@ -135,9 +145,9 @@ const Orders = ({ token }) => {
   // Filter orders by search text and date
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
-      const date = new Date(order.date);
-      if (filterStartDate && date < filterStartDate) return false;
-      if (filterEndDate && date > filterEndDate) return false;
+      const date = parseDate(order.date);
+      if (filterStartDate && (!date || date < filterStartDate)) return false;
+      if (filterEndDate && (!date || date > filterEndDate)) return false;
 
       if (searchText) {
         const text = searchText.toLowerCase();
