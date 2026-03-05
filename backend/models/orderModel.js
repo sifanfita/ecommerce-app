@@ -2,13 +2,28 @@ import { getPool } from "../config/postgres.js";
 
 const mapOrderRow = (row) => {
   if (!row) return null;
+
+  const parsedItems =
+    row.items == null
+      ? []
+      : typeof row.items === "string"
+      ? JSON.parse(row.items)
+      : row.items;
+
+  const parsedAddress =
+    row.address == null
+      ? {}
+      : typeof row.address === "string"
+      ? JSON.parse(row.address)
+      : row.address;
+
   return {
     ...row,
     _id: String(row.id),
     userId: String(row.user_id),
-    items: row.items || [],
+    items: parsedItems,
     amount: Number(row.amount),
-    address: row.address || {},
+    address: parsedAddress,
     paymentProof: row.payment_proof,
   };
 };
@@ -23,12 +38,16 @@ export const createOrder = async ({
   date,
 }) => {
   const pool = await getPool();
+
+  const itemsJson = JSON.stringify(items ?? []);
+  const addressJson = JSON.stringify(address ?? {});
+
   const { rows } = await pool.query(
     `INSERT INTO orders
       (user_id, items, amount, address, status, payment_proof, date)
      VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
-    [userId, items, amount, address, status, paymentProof, date]
+    [userId, itemsJson, amount, addressJson, status, paymentProof, date]
   );
   return mapOrderRow(rows[0]);
 };
