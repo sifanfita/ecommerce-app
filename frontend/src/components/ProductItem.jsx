@@ -9,15 +9,13 @@ const ProductItem = ({ id, image, name, price }) => {
   const [imgSrc, setImgSrc] = useState(image || assets.placeHolder)
 
   return (
-    <Link className='text-gray-700 cursor-pointer' to={`/product/${id}`}>
-      <div className='overflow-hidden relative w-48 h-48 bg-gray-200 rounded-lg'>
-        
+    <Link className='text-gray-700 cursor-pointer block w-full' to={`/product/${id}`}>
+      <div className='overflow-hidden relative w-full aspect-square max-w-[280px] mx-auto sm:max-w-none sm:mx-0 bg-gray-200 rounded-lg'>
         {!imgLoaded && (
           <div className="absolute inset-0 animate-pulse bg-gray-300"></div>
         )}
-
         <img
-          className={`w-48 h-48 object-cover transition-transform duration-300 ease-in-out
+          className={`w-full h-full object-cover transition-transform duration-300 ease-in-out
           ${imgLoaded ? 'opacity-100' : 'opacity-0'} hover:scale-110`}
           src={imgSrc}
           alt={name}
@@ -25,9 +23,8 @@ const ProductItem = ({ id, image, name, price }) => {
           onError={() => setImgSrc(assets.placeHolder)}
         />
       </div>
-
-      <p className='pt-3 pb-1 text-sm truncate'>{name}</p>
-      <p className='text-sm font-medium'>{currency} {price}</p>
+      <p className='pt-3 pb-1 text-xs sm:text-sm truncate'>{name}</p>
+      <p className='text-xs sm:text-sm font-medium'>{currency} {price}</p>
     </Link>
   )
 }

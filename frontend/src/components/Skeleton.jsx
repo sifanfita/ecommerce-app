@@ -20,14 +20,14 @@ export function Skeleton({ className = "", rounded = "default" }) {
 
 /**
  * Product card placeholder: image + title line + price line.
- * Matches ProductItem layout (w-48 h-48 image, pt-3 text).
+ * Responsive to match ProductItem (aspect-square image, then text).
  */
 export function ProductCardSkeleton() {
   return (
-    <div className="flex flex-col">
-      <Skeleton className="w-48 h-48 rounded-lg" rounded="default" />
-      <Skeleton className="mt-3 h-4 w-40 rounded" rounded="default" />
-      <Skeleton className="mt-2 h-4 w-20 rounded" rounded="default" />
+    <div className="flex flex-col w-full">
+      <Skeleton className="w-full aspect-square max-w-[280px] mx-auto sm:max-w-none sm:mx-0 rounded-lg" rounded="default" />
+      <Skeleton className="mt-3 h-3 sm:h-4 w-full max-w-[200px] rounded" rounded="default" />
+      <Skeleton className="mt-2 h-3 sm:h-4 w-16 sm:w-20 rounded" rounded="default" />
     </div>
   );
 }

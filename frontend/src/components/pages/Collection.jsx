@@ -85,32 +85,32 @@ function Collection() {
   }, [sortType])
 
   return (
-    <div className='flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10'>
+    <div className='flex flex-col sm:flex-row gap-4 sm:gap-6 lg:gap-10 pt-6 sm:pt-8 lg:pt-10 px-3 sm:px-4 max-w-[1600px] mx-auto'>
       
-      {/* Left Filters */}
-      <div className='min-w-60'>
+      {/* Left Filters - responsive width, collapsible on mobile */}
+      <div className='w-full sm:w-auto sm:min-w-[140px] md:min-w-[180px] lg:min-w-[240px] flex-shrink-0'>
         <p
           onClick={() => setShowFilter(!showFilter)}
-          className='my-2 text-xl flex items-center cursor-pointer gap-2'
+          className='my-2 text-base sm:text-lg lg:text-xl flex items-center cursor-pointer gap-2'
         >
           FILTERS
           <img className='h-3 sm:hidden' src={assets.downArrow} alt='' />
         </p>
 
         <div
-          className={`border border-gray-300 pl-5 py-3 mt-6 ${
+          className={`border border-gray-300 pl-4 sm:pl-5 py-3 mt-4 sm:mt-6 ${
             showFilter ? '' : 'hidden'
           } sm:block`}
         >
-          <p className='mb-3 text-sm font-medium'>CATEGORIES</p>
+          <p className='mb-3 text-xs sm:text-sm font-medium'>CATEGORIES</p>
 
-          <div className='flex flex-col gap-2 text-sm font-light text-gray-700'>
+          <div className='flex flex-col gap-1.5 sm:gap-2 text-xs sm:text-sm font-light text-gray-700'>
             {['T-shirt','Shirt','Trouser','Shoes','Jacket','Tuta'].map(cat => (
               <label key={cat} className='flex gap-2 cursor-pointer'>
                 <input
                   type='checkbox'
                   value={cat}
-                  className='w-3'
+                  className='w-3 flex-shrink-0 mt-0.5'
                   onChange={toggleCategory}
                 />
                 {cat}
@@ -120,14 +120,13 @@ function Collection() {
         </div>
       </div>
 
-      {/* Right Product List */}
-      <div className='flex-1'>
-        <div className='flex justify-between text-base sm:text-2xl mb-4'>
+      {/* Right Product List - flex-1 with min-w-0 for grid overflow */}
+      <div className='flex-1 min-w-0'>
+        <div className='flex flex-col sm:flex-row sm:flex-wrap sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6'>
           <Title text1={'ALL'} text2={'COLLECTIONS'} />
-
           <select
             onChange={(e) => setSortType(e.target.value)}
-            className='border-2 border-gray-300 text-sm px-2'
+            className='border-2 border-gray-300 text-xs sm:text-sm px-2 py-1.5 sm:py-2 w-full sm:w-auto max-w-[200px] sm:max-w-none'
           >
             <option value='relevant'>Sort by: Relevant</option>
             <option value='low-high'>Sort by: Low to High</option>
@@ -135,7 +134,7 @@ function Collection() {
           </select>
         </div>
         {!showSearch && (
-          <p className='text-gray-500 text-sm mb-3'>Use the search icon in the navbar to search products.</p>
+          <p className='text-gray-500 text-xs sm:text-sm mb-3'>Use the search icon in the navbar to search products.</p>
         )}
 
         {productsError ? (
@@ -143,13 +142,13 @@ function Collection() {
             {productsError}
           </div>
         ) : loading ? (
-          <ProductGridSkeleton count={12} columns="grid-cols-1 md:grid-cols-3 lg:grid-cols-4" gapClass="gap-y-8 md:gap-6 md:gap-y-10" />
+          <ProductGridSkeleton count={12} columns="grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4" gapClass="gap-y-6 sm:gap-4 sm:gap-y-6 md:gap-5 md:gap-y-8 lg:gap-6 lg:gap-y-10" />
         ) : filterProducts.length === 0 ? (
-          <div className='text-center text-gray-400 py-10'>
+          <div className='text-center text-gray-400 py-10 text-sm sm:text-base'>
             No products found.
           </div>
         ) : (
-          <div className='grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-y-8 md:gap-6 md:gap-y-10'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-6 sm:gap-4 sm:gap-y-6 md:gap-5 md:gap-y-8 lg:gap-6 lg:gap-y-10'>
             {filterProducts.map((item) => (
               <ProductItem
                 key={item._id}
