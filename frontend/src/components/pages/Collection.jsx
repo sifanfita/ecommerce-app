@@ -143,13 +143,13 @@ function Collection() {
             {productsError}
           </div>
         ) : loading ? (
-          <ProductGridSkeleton count={12} columns="grid-cols-2 md:grid-cols-3 lg:grid-cols-4" />
+          <ProductGridSkeleton count={12} columns="grid-cols-2 md:grid-cols-3 lg:grid-cols-4" gapClass="gap-5 sm:gap-6 gap-y-8 sm:gap-y-10" />
         ) : filterProducts.length === 0 ? (
           <div className='text-center text-gray-400 py-10'>
             No products found.
           </div>
         ) : (
-          <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6'>
+          <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6 gap-y-8 sm:gap-y-10'>
             {filterProducts.map((item) => (
               <ProductItem
                 key={item._id}

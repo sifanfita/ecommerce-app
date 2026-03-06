@@ -35,9 +35,9 @@ export function ProductCardSkeleton() {
 /**
  * Grid of product card skeletons. Pass count for number of cards.
  */
-export function ProductGridSkeleton({ count = 8, columns = "grid-cols-2 md:grid-cols-3 lg:grid-cols-4" }) {
+export function ProductGridSkeleton({ count = 8, columns = "grid-cols-2 md:grid-cols-3 lg:grid-cols-4", gapClass = "gap-4 gap-y-6" }) {
   return (
-    <div className={`grid ${columns} gap-4 gap-y-6`} aria-busy="true" aria-label="Loading products">
+    <div className={`grid ${columns} ${gapClass}`} aria-busy="true" aria-label="Loading products">
       {Array.from({ length: count }, (_, i) => (
         <ProductCardSkeleton key={i} />
       ))}
