@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from 'react'
 import { ShopContext } from '../context/ShopContext'
 import Title from './Title'
 import ProductItem from './ProductItem'
+import { ProductGridSkeleton } from './Skeleton'
 
 const BestSeller = () => {
   const { products, productsLoading } = useContext(ShopContext)
@@ -40,9 +41,7 @@ const BestSeller = () => {
       </div>
 
       {loading ? (
-        <div className='text-center text-gray-400 py-10'>
-          Loading best sellers...
-        </div>
+        <ProductGridSkeleton count={5} columns="grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5" />
       ) : bestSeller.length === 0 ? (
         <div className='text-center text-gray-400 py-10'>
           No best sellers available.

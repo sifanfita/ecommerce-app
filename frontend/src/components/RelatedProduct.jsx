@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from 'react'
 import { ShopContext } from '../context/ShopContext'
 import Title from './Title'
 import ProductItem from './ProductItem'
+import { ProductGridSkeleton } from './Skeleton'
 
 const RelatedProduct = ({ category }) => {
   const { products, productsLoading } = useContext(ShopContext)
@@ -26,9 +27,7 @@ const RelatedProduct = ({ category }) => {
       </div>
 
       {loading ? (
-        <div className="text-center text-gray-400 py-10">
-          Loading related products...
-        </div>
+        <ProductGridSkeleton count={5} columns="grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5" />
       ) : related.length === 0 ? (
         <div className="text-center text-gray-400 py-10">
           No related products found.

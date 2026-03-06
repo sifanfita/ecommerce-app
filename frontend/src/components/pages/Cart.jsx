@@ -4,7 +4,7 @@ import { ShopContext } from "../../context/ShopContext";
 import Title from "../Title";
 import { assets } from "../../assets/assets";
 import CartTotal from "../CartTotal";
-import Loader from "../Loader";
+import { CartPageSkeleton } from "../Skeleton";
 import CheckoutSteps from "../CheckoutSteps";
 
 function Cart() {
@@ -62,7 +62,7 @@ function Cart() {
   }, [cartItems, products]);
 
   if (loading) {
-    return <Loader message="Loading cart..." />;
+    return <CartPageSkeleton />;
   }
 
   return (

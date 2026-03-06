@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from 'react'
 import { useParams } from 'react-router-dom'
 import { ShopContext } from '../../context/ShopContext'
 import RelatedProduct from '../RelatedProduct'
-import Loader from '../Loader'
+import { ProductDetailSkeleton } from '../Skeleton'
 import { toast } from 'react-toastify'
 import placeholder from '../../assets/placeholder.jpg'
 
@@ -50,7 +50,7 @@ function Product() {
   }
 
   if (loading) {
-    return <Loader message="Loading product..." className="pt-20" />
+    return <ProductDetailSkeleton />
   }
 
   if (!productData) return null

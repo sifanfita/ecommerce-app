@@ -3,7 +3,7 @@ import { ShopContext } from '../../context/ShopContext'
 import { assets } from '../../assets/assets'
 import Title from '../Title'
 import ProductItem from '../ProductItem'
-import Loader from '../Loader'
+import { ProductGridSkeleton } from '../Skeleton'
 
 function Collection() {
   const { products, search, showSearch, productsLoading, productsError } = useContext(ShopContext)
@@ -143,7 +143,7 @@ function Collection() {
             {productsError}
           </div>
         ) : loading ? (
-          <Loader message="Loading products..." className="py-10" />
+          <ProductGridSkeleton count={12} columns="grid-cols-2 md:grid-cols-3 lg:grid-cols-4" />
         ) : filterProducts.length === 0 ? (
           <div className='text-center text-gray-400 py-10'>
             No products found.

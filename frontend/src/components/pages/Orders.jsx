@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShopContext } from '../../context/ShopContext';
 import Title from '../Title';
-import Loader from '../Loader';
+import { OrdersPageSkeleton } from '../Skeleton';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import placeholder from '../../assets/placeholder.jpg';
@@ -80,7 +80,7 @@ function Orders() {
 
       <div>
         {loading ? (
-          <Loader message="Loading orders..." className="py-6" />
+          <OrdersPageSkeleton rowCount={6} />
         ) : orderData.length > 0 ? (
           orderData.map((item, index) => (
             <div
