@@ -10,7 +10,7 @@ const ProductItem = ({ id, image, name, price }) => {
 
   return (
     <Link className='text-gray-700 cursor-pointer block w-full' to={`/product/${id}`}>
-      <div className='overflow-hidden relative w-full aspect-square max-w-[280px] mx-auto sm:max-w-none sm:mx-0 bg-gray-200 rounded-lg'>
+      <div className='overflow-hidden relative w-full aspect-square bg-gray-200 rounded-lg'>
         {!imgLoaded && (
           <div className="absolute inset-0 animate-pulse bg-gray-300"></div>
         )}

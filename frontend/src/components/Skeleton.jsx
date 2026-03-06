@@ -25,7 +25,7 @@ export function Skeleton({ className = "", rounded = "default" }) {
 export function ProductCardSkeleton() {
   return (
     <div className="flex flex-col w-full">
-      <Skeleton className="w-full aspect-square max-w-[280px] mx-auto sm:max-w-none sm:mx-0 rounded-lg" rounded="default" />
+      <Skeleton className="w-full aspect-square rounded-lg" rounded="default" />
       <Skeleton className="mt-3 h-3 sm:h-4 w-full max-w-[200px] rounded" rounded="default" />
       <Skeleton className="mt-2 h-3 sm:h-4 w-16 sm:w-20 rounded" rounded="default" />
     </div>
@@ -35,7 +35,7 @@ export function ProductCardSkeleton() {
 /**
  * Grid of product card skeletons. Pass count for number of cards.
  */
-export function ProductGridSkeleton({ count = 8, columns = "grid-cols-2 md:grid-cols-3 lg:grid-cols-4", gapClass = "gap-4 gap-y-6" }) {
+export function ProductGridSkeleton({ count = 8, columns = "grid-cols-2 md:grid-cols-3 lg:grid-cols-4", gapClass = "gap-6" }) {
   return (
     <div className={`grid ${columns} ${gapClass}`} aria-busy="true" aria-label="Loading products">
       {Array.from({ length: count }, (_, i) => (
