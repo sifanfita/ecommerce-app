@@ -130,16 +130,37 @@ const ShopContextProvider = (props) => {
 
   // ================= UPDATE QUANTITY =================
   const updateQuantity = (itemId, color, size, quantity) => {
-    let cartData = structuredClone(cartItems);
     const normalizedColor = color.trim().toLowerCase();
     const normalizedSize = size.trim().toLowerCase();
 
     if (quantity <= 0) {
+      let cartData = structuredClone(cartItems);
       delete cartData[itemId]?.[normalizedColor]?.[normalizedSize];
-    } else {
-      cartData[itemId][normalizedColor][normalizedSize] = quantity;
+      setCartItems(cartData);
+      return;
     }
 
+    const product = products.find((p) => p._id === itemId);
+    if (!product) {
+      toast.error("Product not found");
+      return;
+    }
+    const colorObj = product.colors.find(
+      (c) => c.color.trim().toLowerCase() === normalizedColor
+    );
+    const sizeObj = colorObj?.sizes.find(
+      (s) => s.size.trim().toLowerCase() === normalizedSize
+    );
+    const maxStock = sizeObj?.stock ?? 0;
+    if (quantity > maxStock) {
+      toast.error(`Only ${maxStock} available for this size`);
+      quantity = maxStock;
+    }
+
+    let cartData = structuredClone(cartItems);
+    if (!cartData[itemId]) cartData[itemId] = {};
+    if (!cartData[itemId][normalizedColor]) cartData[itemId][normalizedColor] = {};
+    cartData[itemId][normalizedColor][normalizedSize] = quantity;
     setCartItems(cartData);
   };
 

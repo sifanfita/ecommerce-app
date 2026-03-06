@@ -115,12 +115,11 @@ const placeOrder = async (req, res) => {
 
     const paymentProofUrl = uploadResult.secure_url;
 
-
     // ==========================
-    // 2️⃣ Update stock
+    // 2️⃣ Validate all items (do NOT change stock yet)
     // ==========================
+    const validated = [];
     for (const item of items) {
-
       const product = await getProductById(Number(item.itemId));
 
       if (!product) {
@@ -156,7 +155,6 @@ const placeOrder = async (req, res) => {
         });
       }
 
-      // Check stock
       if (sizeData.stock < item.quantity) {
         return res.json({
           success: false,
@@ -164,15 +162,11 @@ const placeOrder = async (req, res) => {
         });
       }
 
-      // Reduce stock
-      sizeData.stock -= item.quantity;
-
-      await updateProductColors(product._id, product.colors);
+      validated.push({ product, colorData, sizeData, item });
     }
 
-
     // ==========================
-    // 3️⃣ Create Order
+    // 3️⃣ Create order first (stock unchanged until order is saved)
     // ==========================
     const orderData = {
       userId: Number(userId),
@@ -181,20 +175,27 @@ const placeOrder = async (req, res) => {
       address,
       paymentProof: paymentProofUrl,
       status: "Processing",
-      date: new Date().toISOString(), 
+      date: new Date().toISOString(),
     };
 
     const newOrder = await createOrder(orderData);
 
+    // ==========================
+    // 4️⃣ Only now reduce stock (order was created successfully)
+    // ==========================
+    for (const { product, sizeData, item } of validated) {
+      sizeData.stock -= item.quantity;
+      await updateProductColors(product._id, product.colors);
+    }
 
     // ==========================
-    // 4️⃣ Clear Cart
+    // 5️⃣ Clear Cart
     // ==========================
     await updateUserCart(Number(userId), {});
 
 
     // ==========================
-    // 5️⃣ Response
+    // 6️⃣ Response
     // ==========================
     res.json({
       success: true,
