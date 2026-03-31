@@ -125,7 +125,7 @@ function Login() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         className={inputStyle("contact")}
-        placeholder="Email (optional)"
+        placeholder="Email (optional if you fill phone)"
         disabled={loading}
       />
 
@@ -135,7 +135,7 @@ function Login() {
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
         className={inputStyle("contact")}
-        placeholder="Phone (optional)"
+        placeholder="Phone (optional if you fill email)"
         disabled={loading}
       />
 
