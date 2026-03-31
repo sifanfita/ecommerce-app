@@ -6,16 +6,22 @@ import { assets } from "../../assets/assets";
 import CartTotal from "../CartTotal";
 import { CartPageSkeleton } from "../Skeleton";
 import CheckoutSteps from "../CheckoutSteps";
+import { toast } from "react-toastify";
 
 function Cart() {
-  const { cartItems, products, currency, updateQuantity, navigate } =
-    useContext(ShopContext);
+  const {
+    cartItems,
+    products,
+    currency,
+    updateQuantity,
+    navigate,
+    token,
+  } = useContext(ShopContext);
 
   const [cartData, setCartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
 
-  // ✅ Get stock from product
   const getAvailableStock = (product, color, size) => {
     const normalizedColor = String(color || "").trim().toLowerCase();
     const normalizedSize = String(size || "").trim().toLowerCase();
@@ -31,7 +37,6 @@ function Cart() {
     return sizeObj?.stock || 0;
   };
 
-  // ✅ Convert nested cartItems → flat cartData
   useEffect(() => {
     if (!products || products.length === 0) {
       setLoading(true);
@@ -115,7 +120,9 @@ function Cart() {
 
                     <div className="flex items-center gap-5 mt-2">
                       <p>
-                        {productMissing ? "-" : `${currency} ${productData.price}`}
+                        {productMissing
+                          ? "-"
+                          : `${currency} ${productData.price}`}
                       </p>
 
                       <p className="px-2 py-1 border bg-slate-50">
@@ -125,13 +132,15 @@ function Cart() {
 
                     {productMissing && (
                       <p className="mt-1 text-xs text-red-500">
-                        This product is no longer available. Please remove it from your cart.
+                        This product is no longer available. Please remove it
+                        from your cart.
                       </p>
                     )}
 
                     {!productMissing && availableStock === 0 && (
                       <p className="mt-1 text-xs text-red-500">
-                        This variant is out of stock. Please remove it or choose another option.
+                        This variant is out of stock. Please remove it or choose
+                        another option.
                       </p>
                     )}
                   </div>
@@ -151,19 +160,9 @@ function Cart() {
                     if (val >= 1) {
                       if (val > availableStock) val = availableStock;
 
-                      updateQuantity(
-                        item._id,
-                        item.color,
-                        item.size,
-                        val
-                      );
+                      updateQuantity(item._id, item.color, item.size, val);
                     } else {
-                      updateQuantity(
-                        item._id,
-                        item.color,
-                        item.size,
-                        0
-                      );
+                      updateQuantity(item._id, item.color, item.size, 0);
                     }
                   }}
                 />
@@ -171,12 +170,7 @@ function Cart() {
                 {/* Remove */}
                 <img
                   onClick={() =>
-                    updateQuantity(
-                      item._id,
-                      item.color,
-                      item.size,
-                      0
-                    )
+                    updateQuantity(item._id, item.color, item.size, 0)
                   }
                   className="w-4 mr-4 sm:w-5 cursor-pointer"
                   src={assets.trashBin}
@@ -197,6 +191,13 @@ function Cart() {
                   disabled={cartData.length === 0 || isNavigating}
                   onClick={() => {
                     if (isNavigating) return;
+
+                    // ✅ AUTH CHECK ADDED HERE
+                    if (!token) {
+                      toast.error("Please login before check out.");
+                      navigate("/login");
+                      return;
+                    }
 
                     setIsNavigating(true);
                     navigate("/place-order");
