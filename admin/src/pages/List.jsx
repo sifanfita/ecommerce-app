@@ -28,12 +28,20 @@ const List = ({ token }) => {
 
   const updateStock = async (productId, color, size, newStock) => {
     try {
+      // ✅ Frontend validation
+      if (typeof newStock !== "number" || newStock < 0) {
+        toast.error("Stock cannot be negative");
+        return;
+      }
+
       const response = await axios.put(
         backendUrl + "/api/product/updateStock",
         { productId, color, size, stock: newStock },
-        { headers: {
-      Authorization: `Bearer ${token}`,
-    } }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       if (response.data.success) {
@@ -51,13 +59,12 @@ const List = ({ token }) => {
     fetchList();
   }, []);
 
-  // Define columns
   const columns = useMemo(
     () => [
       {
         accessorKey: 'image',
         header: 'Image',
-        enableColumnFilter: false,   // 🔥 Disable filter UI
+        enableColumnFilter: false,
         enableFilterMatchHighlighting: false,
         Cell: ({ row }) => (
           <img
@@ -93,7 +100,6 @@ const List = ({ token }) => {
       enableExpandAll={false}
       enableExpanding
 
-      // DETAIL PANEL FOR STOCK MANAGEMENT
       renderDetailPanel={({ row }) => (
         <Box sx={{ padding: "16px", background: "#fafafa", borderRadius: 2 }}>
           <h3>Stock Management</h3>
@@ -105,7 +111,13 @@ const List = ({ token }) => {
               {colorObj.sizes.map((sizeObj, sIndex) => (
                 <Box
                   key={sIndex}
-                  sx={{ display: "flex", gap: 2, alignItems: "center", marginTop: "8px", paddingLeft: "12px" }}
+                  sx={{
+                    display: "flex",
+                    gap: 2,
+                    alignItems: "center",
+                    marginTop: "8px",
+                    paddingLeft: "12px",
+                  }}
                 >
                   <span>{sizeObj.size}</span>
 
@@ -114,14 +126,20 @@ const List = ({ token }) => {
                     size="small"
                     label="Stock"
                     value={sizeObj.stock}
-                    onChange={(e) =>
+                    inputProps={{ min: 0 }} // ✅ prevents negative input in UI
+                    onChange={(e) => {
+                      let value = Number(e.target.value);
+
+                      // ✅ Prevent negative values in UI
+                      if (value < 0) value = 0;
+
                       updateStock(
                         row.original._id,
                         colorObj.color,
                         sizeObj.size,
-                        Number(e.target.value)
-                      )
-                    }
+                        value
+                      );
+                    }}
                     sx={{ width: "90px" }}
                   />
                 </Box>

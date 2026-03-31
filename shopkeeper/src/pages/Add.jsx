@@ -23,14 +23,28 @@ const Add = ({ token }) => {
 
   // Colors & Sizes per color
   const [colors, setColors] = useState([{ color: "", sizes: [] }]);
-  const [loading, setLoading] = useState(false);
+
+  const [submitting, setSubmitting] = useState(false);
 
   // Submit handler
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-    if (loading) return;
-    setLoading(true);
+    if (submitting) return;
+
     try {
+      setSubmitting(true);
+
+      // ✅ Validate stock before submitting
+      for (const color of colors) {
+        for (const size of color.sizes) {
+          if (typeof size.stock !== "number" || size.stock < 0) {
+            toast.error("Stock cannot be negative");
+            setSubmitting(false);
+            return;
+          }
+        }
+      }
+
       const formData = new FormData();
       formData.append("name", name);
       formData.append("description", description);
@@ -47,9 +61,11 @@ const Add = ({ token }) => {
       const response = await axios.post(
         backendUrl + "/api/product/add",
         formData,
-        { headers: {
-          Authorization: `Bearer ${token}`,
-        }}
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       if (response.data.success) {
@@ -71,14 +87,14 @@ const Add = ({ token }) => {
       console.log(error);
       toast.error(error.message);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
     <form
       onSubmit={onSubmitHandler}
-      className={`flex flex-col w-full items-start gap-3 ${loading ? 'pointer-events-none opacity-95' : ''}`}
+      className="flex flex-col w-full items-start gap-3"
     >
       {/* Images */}
       <div>
@@ -120,6 +136,7 @@ const Add = ({ token }) => {
           required
         />
       </div>
+
       <div className="w-full">
         <p className="mb-2">Product description</p>
         <textarea
@@ -148,13 +165,15 @@ const Add = ({ token }) => {
             <option value="Trouser">Trouser</option>
           </select>
         </div>
+
         <div>
           <p className="mb-2">Product price</p>
           <input
             onChange={(e) => setPrice(e.target.value)}
             value={price}
             className="w-full px-3 py-2 sm:w-[120px]"
-            type="Number"
+            type="number"
+            min="0"
             placeholder="25"
           />
         </div>
@@ -176,32 +195,38 @@ const Add = ({ token }) => {
               }}
               className="px-2 py-1 mb-2"
             />
+
             <div className="flex flex-wrap gap-2">
               {(category === "Shoes" ? shoeSizes : clothingSizes).map(
                 (size) => {
                   const stockObj = c.sizes.find((s) => s.size === size);
+
                   return (
                     <div key={size} className="flex items-center gap-1">
                       <span>{size}</span>
                       <input
                         type="number"
+                        min="0"
                         placeholder="Stock"
                         value={stockObj?.stock || ""}
                         onChange={(e) => {
+                          let value = Number(e.target.value);
+                          if (value < 0) value = 0;
+
                           const newColors = [...colors];
                           const index = newColors[idx].sizes.findIndex(
                             (s) => s.size === size
                           );
+
                           if (index > -1) {
-                            newColors[idx].sizes[index].stock = Number(
-                              e.target.value
-                            );
+                            newColors[idx].sizes[index].stock = value;
                           } else {
                             newColors[idx].sizes.push({
                               size,
-                              stock: Number(e.target.value),
+                              stock: value,
                             });
                           }
+
                           setColors(newColors);
                         }}
                         className="w-16 px-1 py-0.5 border rounded"
@@ -211,6 +236,7 @@ const Add = ({ token }) => {
                 }
               )}
             </div>
+
             <button
               type="button"
               onClick={() =>
@@ -222,9 +248,12 @@ const Add = ({ token }) => {
             </button>
           </div>
         ))}
+
         <button
           type="button"
-          onClick={() => setColors([...colors, { color: "", sizes: [] }])}
+          onClick={() =>
+            setColors([...colors, { color: "", sizes: [] }])
+          }
           className="mt-2 bg-gray-200 px-3 py-1 rounded"
         >
           Add Color
@@ -246,11 +275,10 @@ const Add = ({ token }) => {
 
       <button
         type="submit"
-        disabled={loading}
-        className="w-28 py-3 mt-4 bg-black text-white flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+        disabled={submitting}
+        className="w-28 py-3 mt-4 bg-black text-white disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden />}
-        {loading ? 'Adding...' : 'ADD'}
+        {submitting ? "ADDING..." : "ADD"}
       </button>
     </form>
   );

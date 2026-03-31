@@ -10,7 +10,6 @@ const addProduct = async (req, res) => {
   try {
     const { name, description, price, category, bestSeller, colors } = req.body;
 
-    // Extract uploaded images
     const image1 = req.files.image1?.[0];
     const image2 = req.files.image2?.[0];
     const image3 = req.files.image3?.[0];
@@ -18,7 +17,6 @@ const addProduct = async (req, res) => {
 
     const images = [image1, image2, image3, image4].filter(Boolean);
 
-    // Upload images to Cloudinary
     const imageUrls = await Promise.all(
       images.map(async (item) => {
         const result = await cloudinary.uploader.upload(item.path, {
@@ -28,20 +26,24 @@ const addProduct = async (req, res) => {
       })
     );
 
-    // Parse colors JSON (each color has sizes with stock)
     let parsedColors;
     try {
       parsedColors = JSON.parse(colors);
+
       if (!Array.isArray(parsedColors)) {
         throw new Error("colors must be an array");
       }
-      // Optional: Validate that each color has name and sizes
+
       parsedColors.forEach((c) => {
         if (!c.color || !Array.isArray(c.sizes)) {
-          throw new Error(
-            "Each color must have 'color' and 'sizes' array"
-          );
+          throw new Error("Each color must have 'color' and 'sizes' array");
         }
+
+        c.sizes.forEach((s) => {
+          if (typeof s.stock !== "number" || s.stock < 0) {
+            throw new Error("Stock must be a non-negative number");
+          }
+        });
       });
     } catch (err) {
       return res.json({
@@ -56,7 +58,7 @@ const addProduct = async (req, res) => {
       description,
       price: Number(price),
       category,
-      colors: parsedColors, // <-- store colors with sizes & stock
+      colors: parsedColors,
       bestSeller: bestSeller === "true",
       date: Date.now(),
       image: imageUrls,
@@ -71,7 +73,6 @@ const addProduct = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-
     res.json({
       success: false,
       message: error.message,
@@ -148,6 +149,14 @@ const updateStock = async (req, res) => {
   try {
     const { productId, color, size, stock } = req.body;
 
+    // ✅ Validate stock
+    if (typeof stock !== "number" || stock < 0) {
+      return res.json({
+        success: false,
+        message: "Stock must be a non-negative number",
+      });
+    }
+
     const product = await getProductById(Number(productId));
     if (!product) {
       return res.json({ success: false, message: "Product not found" });
@@ -163,13 +172,19 @@ const updateStock = async (req, res) => {
       return res.json({ success: false, message: "Size not found" });
     }
 
-    sizeEntry.stock = stock; // update stock number
+    sizeEntry.stock = stock;
 
     await updateProductColors(product._id, product.colors);
 
-    res.json({ success: true, message: "Stock updated successfully" });
+    res.json({
+      success: true,
+      message: "Stock updated successfully",
+    });
   } catch (err) {
-    res.json({ success: false, message: err.message });
+    res.json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
