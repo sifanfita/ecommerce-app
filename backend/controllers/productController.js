@@ -50,28 +50,34 @@ const addProduct = async (req, res) => {
     );
 
     // 🔥 SAFE COLORS PARSING
-    let parsedColors;
+  let parsedColors = [];
 
-    try {
-      if (!colors) {
-        throw new Error("Colors is required");
-      }
+if (!colors) {
+  return res.status(400).json({
+    success: false,
+    message: "Colors is required",
+  });
+}
 
-      const normalized =
-        typeof colors === "string" ? JSON.parse(colors) : colors;
+try {
+  const normalized =
+    typeof colors === "string" ? JSON.parse(colors) : colors;
 
-      if (!Array.isArray(normalized)) {
-        throw new Error("Colors must be an array");
-      }
+  if (!Array.isArray(normalized)) {
+    return res.status(400).json({
+      success: false,
+      message: "Colors must be an array",
+    });
+  }
 
-      parsedColors = normalized;
-    } catch (err) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid colors format",
-        error: err.message,
-      });
-    }
+  parsedColors = normalized;
+} catch (err) {
+  return res.status(400).json({
+    success: false,
+    message: "Invalid JSON in colors field",
+    error: err.message,
+  });
+}
 
     const productData = {
       name,
