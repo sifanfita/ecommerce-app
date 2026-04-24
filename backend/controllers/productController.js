@@ -17,24 +17,40 @@ const addProduct = async (req, res) => {
       colors,
     } = req.body;
 
-    const image1 = req.files.image1?.[0];
-    const image2 = req.files.image2?.[0];
-    const image3 = req.files.image3?.[0];
-    const image4 = req.files.image4?.[0];
+    // 🔥 SAFE FILE ACCESS
+    const files = req.files || {};
+
+    const image1 = files.image1?.[0];
+    const image2 = files.image2?.[0];
+    const image3 = files.image3?.[0];
+    const image4 = files.image4?.[0];
 
     const images = [image1, image2, image3, image4].filter(Boolean);
 
+    // 🔥 GUARD CLAUSE (IMPORTANT)
+    if (images.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one image is required",
+      });
+    }
+
     const imageUrls = await Promise.all(
       images.map(async (item) => {
+        if (!item?.path) {
+          throw new Error("Invalid image file");
+        }
+
         const result = await cloudinary.uploader.upload(item.path, {
           resource_type: "image",
         });
+
         return result.secure_url;
       })
     );
 
-    // ✅ SAFE COLORS PARSING (FIXED)
-    let parsedColors = [];
+    // 🔥 SAFE COLORS PARSING
+    let parsedColors;
 
     try {
       if (!colors) {
@@ -48,23 +64,12 @@ const addProduct = async (req, res) => {
         throw new Error("Colors must be an array");
       }
 
-      normalized.forEach((c) => {
-        if (!c.color || !Array.isArray(c.sizes)) {
-          throw new Error("Each color must have color + sizes");
-        }
-
-        c.sizes.forEach((s) => {
-          if (typeof s.stock !== "number" || s.stock < 0) {
-            throw new Error("Stock must be a non-negative number");
-          }
-        });
-      });
-
       parsedColors = normalized;
     } catch (err) {
       return res.status(400).json({
         success: false,
-        message: err.message || "Invalid colors format",
+        message: "Invalid colors format",
+        error: err.message,
       });
     }
 
@@ -73,7 +78,7 @@ const addProduct = async (req, res) => {
       description,
       price: Number(price),
       category,
-      colors: parsedColors, // ✅ IMPORTANT (NO STRINGIFY)
+      colors: parsedColors,
       bestSeller: bestSeller === "true",
       date: Date.now(),
       image: imageUrls,
@@ -81,14 +86,15 @@ const addProduct = async (req, res) => {
 
     const product = await createProduct(productData);
 
-    res.json({
+    return res.json({
       success: true,
       message: "Product added successfully",
       data: product,
     });
+
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
+    console.log("🔥 SERVER ERROR:", error); // IMPORTANT
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
