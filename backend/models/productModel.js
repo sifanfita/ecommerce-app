@@ -2,6 +2,7 @@ import { getPool } from "../config/postgres.js";
 
 const mapProductRow = (row) => {
   if (!row) return null;
+
   return {
     ...row,
     _id: String(row.id),
@@ -12,6 +13,7 @@ const mapProductRow = (row) => {
 
 export const createProduct = async (data) => {
   const pool = await getPool();
+
   const {
     name,
     description,
@@ -34,7 +36,7 @@ export const createProduct = async (data) => {
       price,
       image,
       category,
-      JSON.stringify(colors ?? []),
+      colors ?? [],   // ✅ RAW OBJECT (NO STRINGIFY)
       Boolean(bestSeller),
       date,
     ]
@@ -45,29 +47,38 @@ export const createProduct = async (data) => {
 
 export const getAllProducts = async () => {
   const pool = await getPool();
+
   const { rows } = await pool.query(
     "SELECT * FROM products ORDER BY date DESC"
   );
+
   return rows.map(mapProductRow);
 };
 
 export const getProductById = async (id) => {
   const pool = await getPool();
-  const { rows } = await pool.query("SELECT * FROM products WHERE id = $1", [
-    id,
-  ]);
+
+  const { rows } = await pool.query(
+    "SELECT * FROM products WHERE id = $1",
+    [id]
+  );
+
   return mapProductRow(rows[0]);
 };
 
 export const updateProductColors = async (id, colors) => {
   const pool = await getPool();
+
   const { rows } = await pool.query(
     `UPDATE products
      SET colors = $1
      WHERE id = $2
      RETURNING *`,
-    [JSON.stringify(colors ?? []), id]
+    [
+      colors ?? [],   // ✅ RAW OBJECT
+      id,
+    ]
   );
+
   return mapProductRow(rows[0]);
 };
-

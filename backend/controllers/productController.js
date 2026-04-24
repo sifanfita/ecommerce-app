@@ -8,7 +8,14 @@ import {
 
 const addProduct = async (req, res) => {
   try {
-    const { name, description, price, category, bestSeller, colors } = req.body;
+    const {
+      name,
+      description,
+      price,
+      category,
+      bestSeller,
+      colors,
+    } = req.body;
 
     const image1 = req.files.image1?.[0];
     const image2 = req.files.image2?.[0];
@@ -26,17 +33,24 @@ const addProduct = async (req, res) => {
       })
     );
 
-    let parsedColors;
-    try {
-      parsedColors = JSON.parse(colors);
+    // ✅ SAFE COLORS PARSING (FIXED)
+    let parsedColors = [];
 
-      if (!Array.isArray(parsedColors)) {
-        throw new Error("colors must be an array");
+    try {
+      if (!colors) {
+        throw new Error("Colors is required");
       }
 
-      parsedColors.forEach((c) => {
+      const normalized =
+        typeof colors === "string" ? JSON.parse(colors) : colors;
+
+      if (!Array.isArray(normalized)) {
+        throw new Error("Colors must be an array");
+      }
+
+      normalized.forEach((c) => {
         if (!c.color || !Array.isArray(c.sizes)) {
-          throw new Error("Each color must have 'color' and 'sizes' array");
+          throw new Error("Each color must have color + sizes");
         }
 
         c.sizes.forEach((s) => {
@@ -45,11 +59,12 @@ const addProduct = async (req, res) => {
           }
         });
       });
+
+      parsedColors = normalized;
     } catch (err) {
-      return res.json({
+      return res.status(400).json({
         success: false,
-        message:
-          "Invalid colors format — must be JSON array of {color, sizes:[{size, stock}]}",
+        message: err.message || "Invalid colors format",
       });
     }
 
@@ -58,7 +73,7 @@ const addProduct = async (req, res) => {
       description,
       price: Number(price),
       category,
-      colors: parsedColors,
+      colors: parsedColors, // ✅ IMPORTANT (NO STRINGIFY)
       bestSeller: bestSeller === "true",
       date: Date.now(),
       image: imageUrls,
@@ -73,7 +88,7 @@ const addProduct = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.json({
+    res.status(500).json({
       success: false,
       message: error.message,
     });
