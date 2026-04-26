@@ -1,3 +1,5 @@
+// FRONTEND (Add.jsx)
+
 import React, { useState } from "react";
 import { assets } from "../assets/assets";
 import axios from "axios";
@@ -8,25 +10,21 @@ const Add = ({ token }) => {
   const clothingSizes = ["S", "M", "L", "XL", "XXL"];
   const shoeSizes = ["40", "41", "42", "43", "44"];
 
-  // Images
-  const [image1, setImage1] = useState(false);
-  const [image2, setImage2] = useState(false);
-  const [image3, setImage3] = useState(false);
-  const [image4, setImage4] = useState(false);
+  const [image1, setImage1] = useState(null);
+  const [image2, setImage2] = useState(null);
+  const [image3, setImage3] = useState(null);
+  const [image4, setImage4] = useState(null);
 
-  // Product info
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("T-shirt");
   const [price, setPrice] = useState("");
   const [bestSeller, setBestSeller] = useState(false);
 
-  // Colors & Sizes per color
   const [colors, setColors] = useState([{ color: "", sizes: [] }]);
 
   const [submitting, setSubmitting] = useState(false);
 
-  // Submit handler
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     if (submitting) return;
@@ -34,29 +32,42 @@ const Add = ({ token }) => {
     try {
       setSubmitting(true);
 
-      // ✅ Validate stock before submitting
-      for (const color of colors) {
-        for (const size of color.sizes) {
-          if (typeof size.stock !== "number" || size.stock < 0) {
-            toast.error("Stock cannot be negative");
-            setSubmitting(false);
-            return;
-          }
-        }
+      const cleanedColors = colors
+        .filter((c) => c.color.trim() !== "")
+        .map((c) => ({
+          color: c.color.trim(),
+          sizes: c.sizes
+            .filter(
+              (s) =>
+                typeof s.stock === "number" &&
+                !Number.isNaN(s.stock) &&
+                s.stock >= 0
+            )
+            .map((s) => ({
+              size: s.size,
+              stock: Number(s.stock),
+            })),
+        }))
+        .filter((c) => c.sizes.length > 0);
+
+      if (cleanedColors.length === 0) {
+        toast.error("Add at least one color with stock");
+        return;
       }
 
       const formData = new FormData();
+
       formData.append("name", name);
       formData.append("description", description);
       formData.append("category", category);
       formData.append("price", price);
-      formData.append("bestSeller", bestSeller);
-      formData.append("colors", JSON.stringify(colors));
+      formData.append("bestSeller", String(bestSeller));
+      formData.append("colors", JSON.stringify(cleanedColors));
 
-      image1 && formData.append("image1", image1);
-      image2 && formData.append("image2", image2);
-      image3 && formData.append("image3", image3);
-      image4 && formData.append("image4", image4);
+      if (image1) formData.append("image1", image1);
+      if (image2) formData.append("image2", image2);
+      if (image3) formData.append("image3", image3);
+      if (image4) formData.append("image4", image4);
 
       const response = await axios.post(
         backendUrl + "/api/product/add",
@@ -70,22 +81,27 @@ const Add = ({ token }) => {
 
       if (response.data.success) {
         toast.success(response.data.message);
+
         setName("");
         setDescription("");
         setCategory("T-shirt");
         setPrice("");
         setBestSeller(false);
-        setImage1(false);
-        setImage2(false);
-        setImage3(false);
-        setImage4(false);
+
+        setImage1(null);
+        setImage2(null);
+        setImage3(null);
+        setImage4(null);
+
         setColors([{ color: "", sizes: [] }]);
       } else {
         toast.error(response.data.message);
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.message);
+      toast.error(
+        error?.response?.data?.message || "Failed to add product"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -96,66 +112,69 @@ const Add = ({ token }) => {
       onSubmit={onSubmitHandler}
       className="flex flex-col w-full items-start gap-3"
     >
-      {/* Images */}
       <div>
         <p className="mb-2">Upload Image</p>
+
         <div className="flex gap-2">
           {[image1, image2, image3, image4].map((img, idx) => (
             <label key={idx} htmlFor={`image${idx + 1}`}>
               <img
                 className="w-20"
-                src={!img ? assets.upload_area : URL.createObjectURL(img)}
+                src={
+                  !img
+                    ? assets.upload_area
+                    : URL.createObjectURL(img)
+                }
                 alt=""
               />
+
               <input
+                hidden
+                type="file"
+                id={`image${idx + 1}`}
                 onChange={(e) => {
                   const file = e.target.files[0];
+
                   if (idx === 0) setImage1(file);
                   if (idx === 1) setImage2(file);
                   if (idx === 2) setImage3(file);
                   if (idx === 3) setImage4(file);
                 }}
-                type="file"
-                id={`image${idx + 1}`}
-                hidden
               />
             </label>
           ))}
         </div>
       </div>
 
-      {/* Product name & description */}
       <div className="w-full">
         <p className="mb-2">Product name</p>
         <input
-          onChange={(e) => setName(e.target.value)}
-          value={name}
-          className="w-full max-w-[500px] px-3 py-2"
-          type="text"
-          placeholder="Type here"
           required
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full max-w-[500px] px-3 py-2"
         />
       </div>
 
       <div className="w-full">
         <p className="mb-2">Product description</p>
         <textarea
-          onChange={(e) => setDescription(e.target.value)}
-          value={description}
-          className="w-full max-w-[500px] px-3 py-2"
-          placeholder="Write content here"
           required
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full max-w-[500px] px-3 py-2"
         />
       </div>
 
-      {/* Category & price */}
       <div className="flex flex-col sm:flex-row gap-2 w-full sm:gap-8">
         <div>
           <p className="mb-2">Product category</p>
+
           <select
-            onChange={(e) => setCategory(e.target.value)}
             value={category}
-            className="w-full px-3 py-2"
+            onChange={(e) => setCategory(e.target.value)}
+            className="px-3 py-2"
           >
             <option value="T-shirt">T-shirt</option>
             <option value="Shirt">Shirt</option>
@@ -168,22 +187,25 @@ const Add = ({ token }) => {
 
         <div>
           <p className="mb-2">Product price</p>
+
           <input
-            onChange={(e) => setPrice(e.target.value)}
-            value={price}
-            className="w-full px-3 py-2 sm:w-[120px]"
             type="number"
             min="0"
-            placeholder="25"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="px-3 py-2 sm:w-[120px]"
           />
         </div>
       </div>
 
-      {/* Colors & sizes per color */}
       <div>
         <p className="mb-2">Colors & Stock</p>
+
         {colors.map((c, idx) => (
-          <div key={idx} className="border p-2 mb-2 rounded">
+          <div
+            key={idx}
+            className="border p-2 mb-2 rounded"
+          >
             <input
               type="text"
               placeholder="Color name"
@@ -197,52 +219,89 @@ const Add = ({ token }) => {
             />
 
             <div className="flex flex-wrap gap-2">
-              {(category === "Shoes" ? shoeSizes : clothingSizes).map(
-                (size) => {
-                  const stockObj = c.sizes.find((s) => s.size === size);
+              {(category === "Shoes"
+                ? shoeSizes
+                : clothingSizes
+              ).map((size) => {
+                const stockObj = c.sizes.find(
+                  (s) => s.size === size
+                );
 
-                  return (
-                    <div key={size} className="flex items-center gap-1">
-                      <span>{size}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        placeholder="Stock"
-                        value={stockObj?.stock || ""}
-                        onChange={(e) => {
-                          let value = Number(e.target.value);
-                          if (value < 0) value = 0;
+                return (
+                  <div
+                    key={size}
+                    className="flex items-center gap-1"
+                  >
+                    <span>{size}</span>
 
-                          const newColors = [...colors];
-                          const index = newColors[idx].sizes.findIndex(
-                            (s) => s.size === size
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={stockObj?.stock ?? ""}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+
+                        const value =
+                          raw === ""
+                            ? ""
+                            : Number(raw);
+
+                        const newColors = [...colors];
+
+                        const sizeIndex =
+                          newColors[
+                            idx
+                          ].sizes.findIndex(
+                            (s) =>
+                              s.size === size
                           );
 
-                          if (index > -1) {
-                            newColors[idx].sizes[index].stock = value;
+                        if (raw === "") {
+                          if (sizeIndex > -1) {
+                            newColors[
+                              idx
+                            ].sizes.splice(
+                              sizeIndex,
+                              1
+                            );
+                          }
+                        } else {
+                          if (sizeIndex > -1) {
+                            newColors[
+                              idx
+                            ].sizes[
+                              sizeIndex
+                            ].stock = value;
                           } else {
-                            newColors[idx].sizes.push({
+                            newColors[
+                              idx
+                            ].sizes.push({
                               size,
                               stock: value,
                             });
                           }
+                        }
 
-                          setColors(newColors);
-                        }}
-                        className="w-16 px-1 py-0.5 border rounded"
-                      />
-                    </div>
-                  );
-                }
-              )}
+                        setColors(newColors);
+                      }}
+                      className="w-16 px-1 py-0.5 border rounded"
+                    />
+                  </div>
+                );
+              })}
             </div>
 
             <button
               type="button"
-              onClick={() =>
-                setColors(colors.filter((_, i) => i !== idx))
-              }
               className="mt-2 text-red-500"
+              onClick={() =>
+                setColors(
+                  colors.filter(
+                    (_, i) => i !== idx
+                  )
+                )
+              }
             >
               Remove Color
             </button>
@@ -251,24 +310,29 @@ const Add = ({ token }) => {
 
         <button
           type="button"
-          onClick={() =>
-            setColors([...colors, { color: "", sizes: [] }])
-          }
           className="mt-2 bg-gray-200 px-3 py-1 rounded"
+          onClick={() =>
+            setColors([
+              ...colors,
+              { color: "", sizes: [] },
+            ])
+          }
         >
           Add Color
         </button>
       </div>
 
-      {/* Bestseller */}
       <div className="flex gap-2 mt-2">
         <input
-          onChange={() => setBestSeller((prev) => !prev)}
-          checked={bestSeller}
-          type="checkbox"
           id="bestseller"
+          type="checkbox"
+          checked={bestSeller}
+          onChange={() =>
+            setBestSeller((prev) => !prev)
+          }
         />
-        <label className="cursor-pointer" htmlFor="bestseller">
+
+        <label htmlFor="bestseller">
           Add to bestseller
         </label>
       </div>
@@ -276,7 +340,7 @@ const Add = ({ token }) => {
       <button
         type="submit"
         disabled={submitting}
-        className="w-28 py-3 mt-4 bg-black text-white disabled:opacity-60 disabled:cursor-not-allowed"
+        className="w-28 py-3 mt-4 bg-black text-white"
       >
         {submitting ? "ADDING..." : "ADD"}
       </button>
