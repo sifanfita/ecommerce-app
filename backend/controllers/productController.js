@@ -46,7 +46,7 @@ const addProduct = async (req, res) => {
       })
     );
 
-    // Parse colors safely
+    // Safe colors parsing
     let parsedColors = [];
 
     try {
@@ -68,7 +68,7 @@ const addProduct = async (req, res) => {
       });
     }
 
-    // FINAL PRODUCT OBJECT (NO DATE HERE ❌)
+    // ❌ NO DATE HERE (IMPORTANT FIX)
     const productData = {
       name,
       description,
@@ -87,7 +87,7 @@ const addProduct = async (req, res) => {
       data: product,
     });
   } catch (error) {
-    console.log("🔥 SERVER ERROR:", error);
+    console.log("🔥 ERROR:", error);
     return res.status(500).json({
       success: false,
       message: error.message,
@@ -96,32 +96,22 @@ const addProduct = async (req, res) => {
 };
 
 // =======================
-// LIST PRODUCTS
-// =======================
 const listProducts = async (req, res) => {
   try {
     const products = await getAllProducts();
 
-    const availableProducts = products.filter((product) =>
-      product.colors?.some((color) =>
-        color.sizes?.some((size) => size.stock > 0)
+    const available = products.filter((p) =>
+      p.colors?.some((c) =>
+        c.sizes?.some((s) => s.stock > 0)
       )
     );
 
-    res.json({
-      success: true,
-      data: availableProducts,
-    });
-  } catch (error) {
-    res.json({
-      success: false,
-      message: error.message,
-    });
+    res.json({ success: true, data: available });
+  } catch (e) {
+    res.json({ success: false, message: e.message });
   }
 };
 
-// =======================
-// SINGLE PRODUCT
 // =======================
 const singleProduct = async (req, res) => {
   try {
@@ -130,87 +120,40 @@ const singleProduct = async (req, res) => {
     const product = await getProductById(Number(id));
 
     if (!product) {
-      return res.json({
-        success: false,
-        message: "Product not found",
-      });
+      return res.json({ success: false, message: "Not found" });
     }
 
-    const hasStock = product.colors?.some((color) =>
-      color.sizes?.some((size) => size.stock > 0)
-    );
-
-    if (!hasStock) {
-      return res.json({
-        success: false,
-        message: "Product is out of stock",
-      });
-    }
-
-    res.json({
-      success: true,
-      data: product,
-    });
-  } catch (error) {
-    res.json({
-      success: false,
-      message: error.message,
-    });
+    res.json({ success: true, data: product });
+  } catch (e) {
+    res.json({ success: false, message: e.message });
   }
 };
 
-// =======================
-// UPDATE STOCK
 // =======================
 const updateStock = async (req, res) => {
   try {
     const { productId, color, size, stock } = req.body;
 
-    if (typeof stock !== "number" || stock < 0) {
-      return res.json({
-        success: false,
-        message: "Stock must be a non-negative number",
-      });
-    }
-
     const product = await getProductById(Number(productId));
 
     if (!product) {
-      return res.json({
-        success: false,
-        message: "Product not found",
-      });
+      return res.json({ success: false, message: "Not found" });
     }
 
-    const colorEntry = product.colors.find((c) => c.color === color);
-    if (!colorEntry) {
-      return res.json({
-        success: false,
-        message: "Color not found",
-      });
-    }
+    const colorEntry = product.colors.find(c => c.color === color);
+    const sizeEntry = colorEntry?.sizes.find(s => s.size === size);
 
-    const sizeEntry = colorEntry.sizes.find((s) => s.size === size);
     if (!sizeEntry) {
-      return res.json({
-        success: false,
-        message: "Size not found",
-      });
+      return res.json({ success: false, message: "Size not found" });
     }
 
     sizeEntry.stock = stock;
 
     await updateProductColors(product._id, product.colors);
 
-    res.json({
-      success: true,
-      message: "Stock updated successfully",
-    });
-  } catch (err) {
-    res.json({
-      success: false,
-      message: err.message,
-    });
+    res.json({ success: true, message: "Updated" });
+  } catch (e) {
+    res.json({ success: false, message: e.message });
   }
 };
 

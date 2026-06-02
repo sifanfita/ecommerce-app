@@ -1,21 +1,17 @@
 import { getPool } from "../config/postgres.js";
 
 // =======================
-// SAFE JSON PARSER
-// =======================
-const safeParse = (value, fallback = []) => {
+const safeParse = (v, fallback = []) => {
   try {
-    if (typeof value === "string") return JSON.parse(value);
-    return value ?? fallback;
+    if (typeof v === "string") return JSON.parse(v);
+    return v ?? fallback;
   } catch {
     return fallback;
   }
 };
 
 // =======================
-// MAP ROW
-// =======================
-const mapProductRow = (row) => {
+const mapRow = (row) => {
   if (!row) return null;
 
   return {
@@ -45,7 +41,7 @@ export const createProduct = async (data) => {
   const { rows } = await pool.query(
     `INSERT INTO products
       (name, description, price, image, category, colors, best_seller)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     VALUES ($1,$2,$3,$4,$5,$6,$7)
      RETURNING *`,
     [
       name,
@@ -58,11 +54,9 @@ export const createProduct = async (data) => {
     ]
   );
 
-  return mapProductRow(rows[0]);
+  return mapRow(rows[0]);
 };
 
-// =======================
-// GET ALL PRODUCTS
 // =======================
 export const getAllProducts = async () => {
   const pool = await getPool();
@@ -71,11 +65,9 @@ export const getAllProducts = async () => {
     "SELECT * FROM products ORDER BY date DESC"
   );
 
-  return rows.map(mapProductRow);
+  return rows.map(mapRow);
 };
 
-// =======================
-// GET BY ID
 // =======================
 export const getProductById = async (id) => {
   const pool = await getPool();
@@ -85,11 +77,9 @@ export const getProductById = async (id) => {
     [id]
   );
 
-  return mapProductRow(rows[0]);
+  return mapRow(rows[0]);
 };
 
-// =======================
-// UPDATE COLORS
 // =======================
 export const updateProductColors = async (id, colors) => {
   const pool = await getPool();
@@ -105,5 +95,5 @@ export const updateProductColors = async (id, colors) => {
     ]
   );
 
-  return mapProductRow(rows[0]);
+  return mapRow(rows[0]);
 };
