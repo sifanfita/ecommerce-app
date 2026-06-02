@@ -1,6 +1,18 @@
 import { getPool } from "../config/postgres.js";
 
 // =======================
+// SAFE JSON PARSER
+// =======================
+const safeParse = (value, fallback = []) => {
+  try {
+    if (typeof value === "string") return JSON.parse(value);
+    return value ?? fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+// =======================
 // MAP ROW
 // =======================
 const mapProductRow = (row) => {
@@ -9,14 +21,8 @@ const mapProductRow = (row) => {
   return {
     ...row,
     _id: String(row.id),
-    image:
-      typeof row.image === "string"
-        ? JSON.parse(row.image)
-        : row.image || [],
-    colors:
-      typeof row.colors === "string"
-        ? JSON.parse(row.colors)
-        : row.colors || [],
+    image: safeParse(row.image, []),
+    colors: safeParse(row.colors, []),
   };
 };
 
@@ -34,23 +40,21 @@ export const createProduct = async (data) => {
     category,
     colors,
     bestSeller,
-    date,
   } = data;
 
   const { rows } = await pool.query(
     `INSERT INTO products
-      (name, description, price, image, category, colors, best_seller, date)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      (name, description, price, image, category, colors, best_seller)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
     [
       name,
       description,
       price,
-      JSON.stringify(image ?? []),   // ✅ FIXED
+      JSON.stringify(image ?? []),
       category,
-      JSON.stringify(colors ?? []),  // ✅ FIXED
+      JSON.stringify(colors ?? []),
       Boolean(bestSeller),
-      date,
     ]
   );
 
@@ -96,7 +100,7 @@ export const updateProductColors = async (id, colors) => {
      WHERE id = $2
      RETURNING *`,
     [
-      JSON.stringify(colors ?? []), // ✅ FIXED
+      JSON.stringify(colors ?? []),
       id,
     ]
   );

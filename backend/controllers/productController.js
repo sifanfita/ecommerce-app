@@ -36,13 +36,12 @@ const addProduct = async (req, res) => {
       });
     }
 
-    // Upload images to Cloudinary
+    // Upload images
     const imageUrls = await Promise.all(
       images.map(async (file) => {
         const result = await cloudinary.uploader.upload(file.path, {
           resource_type: "image",
         });
-
         return result.secure_url;
       })
     );
@@ -62,13 +61,14 @@ const addProduct = async (req, res) => {
       }
 
       parsedColors = normalized;
-    } catch (err) {
+    } catch {
       return res.status(400).json({
         success: false,
         message: "Invalid JSON in colors field",
       });
     }
 
+    // FINAL PRODUCT OBJECT (NO DATE HERE ❌)
     const productData = {
       name,
       description,
@@ -76,7 +76,6 @@ const addProduct = async (req, res) => {
       category,
       colors: parsedColors,
       bestSeller: bestSeller === "true",
-      date: Date.now(),
       image: imageUrls,
     };
 
