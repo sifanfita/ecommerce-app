@@ -11,6 +11,7 @@ import orderRouter from './routes/orderRoute.js';
 import customerRouter from "./routes/customerRoutes.js";
 
 import initAdmin from "./utils/initAdmin.js";
+import initDatabase from "./utils/initDatabase.js";
 
 const app = express();
 const port = process.env.PORT || 9000;
@@ -60,6 +61,7 @@ app.get('/', (req, res) => {
 const startServer = async () => {
   try {
     await connectPostgres();     // 1️⃣ Connect PostgreSQL
+    await initDatabase(); // <-- CREATE TABLES FIRST
     await connectCloudinary();   // 2️⃣ Connect Cloudinary
     await initAdmin();           // 3️⃣ Initialize admin safely
 
