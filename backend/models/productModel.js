@@ -1,16 +1,28 @@
 import { getPool } from "../config/postgres.js";
 
+// =======================
+// MAP ROW
+// =======================
 const mapProductRow = (row) => {
   if (!row) return null;
 
   return {
     ...row,
     _id: String(row.id),
-    image: row.image || [],
-    colors: row.colors || [],
+    image:
+      typeof row.image === "string"
+        ? JSON.parse(row.image)
+        : row.image || [],
+    colors:
+      typeof row.colors === "string"
+        ? JSON.parse(row.colors)
+        : row.colors || [],
   };
 };
 
+// =======================
+// CREATE PRODUCT
+// =======================
 export const createProduct = async (data) => {
   const pool = await getPool();
 
@@ -34,9 +46,9 @@ export const createProduct = async (data) => {
       name,
       description,
       price,
-      image,
+      JSON.stringify(image ?? []),   // ✅ FIXED
       category,
-      colors ?? [],   // ✅ RAW OBJECT (NO STRINGIFY)
+      JSON.stringify(colors ?? []),  // ✅ FIXED
       Boolean(bestSeller),
       date,
     ]
@@ -45,6 +57,9 @@ export const createProduct = async (data) => {
   return mapProductRow(rows[0]);
 };
 
+// =======================
+// GET ALL PRODUCTS
+// =======================
 export const getAllProducts = async () => {
   const pool = await getPool();
 
@@ -55,6 +70,9 @@ export const getAllProducts = async () => {
   return rows.map(mapProductRow);
 };
 
+// =======================
+// GET BY ID
+// =======================
 export const getProductById = async (id) => {
   const pool = await getPool();
 
@@ -66,6 +84,9 @@ export const getProductById = async (id) => {
   return mapProductRow(rows[0]);
 };
 
+// =======================
+// UPDATE COLORS
+// =======================
 export const updateProductColors = async (id, colors) => {
   const pool = await getPool();
 
@@ -75,7 +96,7 @@ export const updateProductColors = async (id, colors) => {
      WHERE id = $2
      RETURNING *`,
     [
-      colors ?? [],   // ✅ RAW OBJECT
+      JSON.stringify(colors ?? []), // ✅ FIXED
       id,
     ]
   );

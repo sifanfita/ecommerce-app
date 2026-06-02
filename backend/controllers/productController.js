@@ -6,6 +6,9 @@ import {
   updateProductColors,
 } from "../models/productModel.js";
 
+// =======================
+// ADD PRODUCT
+// =======================
 const addProduct = async (req, res) => {
   try {
     const {
@@ -17,17 +20,15 @@ const addProduct = async (req, res) => {
       colors,
     } = req.body;
 
-    // 🔥 SAFE FILE ACCESS
     const files = req.files || {};
 
-    const image1 = files.image1?.[0];
-    const image2 = files.image2?.[0];
-    const image3 = files.image3?.[0];
-    const image4 = files.image4?.[0];
+    const images = [
+      files.image1?.[0],
+      files.image2?.[0],
+      files.image3?.[0],
+      files.image4?.[0],
+    ].filter(Boolean);
 
-    const images = [image1, image2, image3, image4].filter(Boolean);
-
-    // 🔥 GUARD CLAUSE (IMPORTANT)
     if (images.length === 0) {
       return res.status(400).json({
         success: false,
@@ -35,13 +36,10 @@ const addProduct = async (req, res) => {
       });
     }
 
+    // Upload images to Cloudinary
     const imageUrls = await Promise.all(
-      images.map(async (item) => {
-        if (!item?.path) {
-          throw new Error("Invalid image file");
-        }
-
-        const result = await cloudinary.uploader.upload(item.path, {
+      images.map(async (file) => {
+        const result = await cloudinary.uploader.upload(file.path, {
           resource_type: "image",
         });
 
@@ -49,35 +47,27 @@ const addProduct = async (req, res) => {
       })
     );
 
-    // 🔥 SAFE COLORS PARSING
-  let parsedColors = [];
+    // Parse colors safely
+    let parsedColors = [];
 
-if (!colors) {
-  return res.status(400).json({
-    success: false,
-    message: "Colors is required",
-  });
-}
+    try {
+      const normalized =
+        typeof colors === "string" ? JSON.parse(colors) : colors;
 
-try {
-  const normalized =
-    typeof colors === "string" ? JSON.parse(colors) : colors;
+      if (!Array.isArray(normalized)) {
+        return res.status(400).json({
+          success: false,
+          message: "Colors must be an array",
+        });
+      }
 
-  if (!Array.isArray(normalized)) {
-    return res.status(400).json({
-      success: false,
-      message: "Colors must be an array",
-    });
-  }
-
-  parsedColors = normalized;
-} catch (err) {
-  return res.status(400).json({
-    success: false,
-    message: "Invalid JSON in colors field",
-    error: err.message,
-  });
-}
+      parsedColors = normalized;
+    } catch (err) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid JSON in colors field",
+      });
+    }
 
     const productData = {
       name,
@@ -97,9 +87,8 @@ try {
       message: "Product added successfully",
       data: product,
     });
-
   } catch (error) {
-    console.log("🔥 SERVER ERROR:", error); // IMPORTANT
+    console.log("🔥 SERVER ERROR:", error);
     return res.status(500).json({
       success: false,
       message: error.message,
@@ -107,26 +96,24 @@ try {
   }
 };
 
-
-
-// function for get all products (ONLY AVAILABLE ONES)
+// =======================
+// LIST PRODUCTS
+// =======================
 const listProducts = async (req, res) => {
   try {
     const products = await getAllProducts();
 
-    // 🔥 Filter products with at least one size in stock
-    const availableProducts = products.filter((product) => {
-      return product.colors.some((color) =>
-        color.sizes.some((size) => size.stock > 0)
-      );
-    });
+    const availableProducts = products.filter((product) =>
+      product.colors?.some((color) =>
+        color.sizes?.some((size) => size.stock > 0)
+      )
+    );
 
     res.json({
       success: true,
       data: availableProducts,
     });
   } catch (error) {
-    console.log(error);
     res.json({
       success: false,
       message: error.message,
@@ -134,10 +121,13 @@ const listProducts = async (req, res) => {
   }
 };
 
-
+// =======================
+// SINGLE PRODUCT
+// =======================
 const singleProduct = async (req, res) => {
   try {
     const { id } = req.body;
+
     const product = await getProductById(Number(id));
 
     if (!product) {
@@ -147,8 +137,8 @@ const singleProduct = async (req, res) => {
       });
     }
 
-    const hasStock = product.colors.some((color) =>
-      color.sizes.some((size) => size.stock > 0)
+    const hasStock = product.colors?.some((color) =>
+      color.sizes?.some((size) => size.stock > 0)
     );
 
     if (!hasStock) {
@@ -163,7 +153,6 @@ const singleProduct = async (req, res) => {
       data: product,
     });
   } catch (error) {
-    console.log(error);
     res.json({
       success: false,
       message: error.message,
@@ -171,12 +160,13 @@ const singleProduct = async (req, res) => {
   }
 };
 
-// Update stock for a specific color + size
+// =======================
+// UPDATE STOCK
+// =======================
 const updateStock = async (req, res) => {
   try {
     const { productId, color, size, stock } = req.body;
 
-    // ✅ Validate stock
     if (typeof stock !== "number" || stock < 0) {
       return res.json({
         success: false,
@@ -185,18 +175,28 @@ const updateStock = async (req, res) => {
     }
 
     const product = await getProductById(Number(productId));
+
     if (!product) {
-      return res.json({ success: false, message: "Product not found" });
+      return res.json({
+        success: false,
+        message: "Product not found",
+      });
     }
 
     const colorEntry = product.colors.find((c) => c.color === color);
     if (!colorEntry) {
-      return res.json({ success: false, message: "Color not found" });
+      return res.json({
+        success: false,
+        message: "Color not found",
+      });
     }
 
     const sizeEntry = colorEntry.sizes.find((s) => s.size === size);
     if (!sizeEntry) {
-      return res.json({ success: false, message: "Size not found" });
+      return res.json({
+        success: false,
+        message: "Size not found",
+      });
     }
 
     sizeEntry.stock = stock;
@@ -214,6 +214,5 @@ const updateStock = async (req, res) => {
     });
   }
 };
-
 
 export { addProduct, listProducts, singleProduct, updateStock };
