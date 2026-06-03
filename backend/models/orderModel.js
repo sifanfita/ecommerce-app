@@ -54,7 +54,6 @@ export const createOrder = async ({
   address,
   paymentProof,
   status = "Order placed",
-  date,
 }) => {
   const pool = await getPool();
 
@@ -63,11 +62,19 @@ export const createOrder = async ({
 
   const { rows } = await pool.query(
     `INSERT INTO orders
-      (user_id, items, amount, address, status, payment_proof, date)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+      (user_id, items, amount, address, status, payment_proof)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
-    [userId, itemsJson, Number(amount) || 0, addressJson, status, paymentProof, date]
+    [
+      userId,
+      itemsJson,
+      Number(amount) || 0,
+      addressJson,
+      status,
+      paymentProof,
+    ]
   );
+
   return mapOrderRow(rows[0]);
 };
 
