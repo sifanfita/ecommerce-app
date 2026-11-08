@@ -1,9 +1,13 @@
+
 import express from "express";
 import {
   listProducts,
   addProduct,
   updateStock,
   singleProduct,
+  searchProducts,
+  restock,
+
 } from "../controllers/productController.js";
 
 import upload from "../middleware/multer.js";
@@ -13,6 +17,14 @@ import adminOrShopkeeper from "../middleware/adminOrShopkeeper.js";
 const productRouter = express.Router();
 
 productRouter.get("/list", listProducts);
+
+// POS product search
+productRouter.get(
+  "/search",
+  authMiddleware,
+  adminOrShopkeeper,
+  searchProducts
+);
 
 productRouter.post(
   "/add",
@@ -34,6 +46,13 @@ productRouter.put(
   authMiddleware,
   adminOrShopkeeper,
   updateStock
+);
+
+productRouter.put(
+  "/restock",
+  authMiddleware,
+  adminOrShopkeeper,
+  restock
 );
 
 export default productRouter;

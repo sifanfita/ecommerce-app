@@ -4,6 +4,10 @@ import {
   userOrders,
   placeOrder,
   updateOrderStatus,
+  completePOSSale,
+  salesHistory,
+  salesAnalytics,
+
 } from "../controllers/orderController.js";
 import adminOnly from "../middleware/adminOnly.js";
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -15,6 +19,26 @@ const orderRouter = express.Router();
 // Admin routes
 orderRouter.post("/list", authMiddleware, adminOrShopkeeper, allOrders); // GET for admin
 orderRouter.post("/status", authMiddleware, adminOrShopkeeper, updateOrderStatus);
+// POS – Admin and shopkeeper
+orderRouter.post(
+  "/pos",
+  authMiddleware,
+  adminOrShopkeeper,
+  completePOSSale
+);
+orderRouter.get(
+  "/sales-history",
+  authMiddleware,
+  adminOrShopkeeper,
+  salesHistory
+);
+
+orderRouter.get(
+  "/sales-analytics",
+  authMiddleware,
+  adminOrShopkeeper,
+  salesAnalytics
+);
 
 // User routes
 orderRouter.post("/place",  authMiddleware,upload.single("paymentProof"), placeOrder);

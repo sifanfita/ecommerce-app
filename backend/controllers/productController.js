@@ -1,10 +1,30 @@
+
 import { v2 as cloudinary } from "cloudinary";
+import { randomUUID } from "crypto";
+
 import {
   createProduct,
   getAllProducts,
   getProductById,
   updateProductColors,
+  restockProduct,
 } from "../models/productModel.js";
+
+// Generate a unique SKU
+const generateSKU = () => {
+  return `SKU-${randomUUID().slice(0, 8).toUpperCase()}`;
+};
+
+// Add missing SKUs while preserving existing ones
+const assignVariantSKUs = (colors) => {
+  return colors.map((colorEntry) => ({
+    ...colorEntry,
+    sizes: (colorEntry.sizes || []).map((sizeEntry) => ({
+      ...sizeEntry,
+      sku: sizeEntry.sku || generateSKU(),
+    })),
+  }));
+};
 
 // =======================
 // ADD PRODUCT
@@ -15,11 +35,35 @@ const addProduct = async (req, res) => {
       name,
       description,
       price,
+      costPrice,
       category,
       bestSeller,
       colors,
     } = req.body;
 
+    if (!name || !description || !category) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, description, and category are required",
+      });
+    }
+
+    const sellingPrice = Number(price);
+    const productCost = Number(costPrice);
+
+    if (
+      !Number.isFinite(sellingPrice) ||
+      sellingPrice <= 0 ||
+      !Number.isFinite(productCost) ||
+      productCost < 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter valid selling and cost prices",
+      });
+    }
+
+    // Collect uploaded images
     const files = req.files || {};
 
     const images = [
@@ -36,46 +80,76 @@ const addProduct = async (req, res) => {
       });
     }
 
-    // Upload images
+    // Upload images to Cloudinary
     const imageUrls = await Promise.all(
       images.map(async (file) => {
         const result = await cloudinary.uploader.upload(file.path, {
           resource_type: "image",
         });
+
         return result.secure_url;
       })
     );
 
-    // Safe colors parsing
-    let parsedColors = [];
+    // Parse colors
+    let parsedColors;
 
     try {
-      const normalized =
+      parsedColors =
         typeof colors === "string" ? JSON.parse(colors) : colors;
 
-      if (!Array.isArray(normalized)) {
-        return res.status(400).json({
-          success: false,
-          message: "Colors must be an array",
-        });
+      if (!Array.isArray(parsedColors) || parsedColors.length === 0) {
+        throw new Error("Colors must be a non-empty array");
       }
-
-      parsedColors = normalized;
-    } catch {
+    } catch (error) {
       return res.status(400).json({
         success: false,
-        message: "Invalid JSON in colors field",
+        message: error.message || "Invalid colors data",
       });
     }
 
-    // ❌ NO DATE HERE (IMPORTANT FIX)
+    // Validate and normalize variants
+    for (const color of parsedColors) {
+      if (
+        !color.color ||
+        !Array.isArray(color.sizes) ||
+        color.sizes.length === 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Each color must have at least one size",
+        });
+      }
+
+      for (const size of color.sizes) {
+        const stock = Number(size.stock);
+
+        if (
+          !size.size ||
+          !Number.isInteger(stock) ||
+          stock < 0
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "Each size must have a valid name and non-negative stock",
+          });
+        }
+
+        size.stock = stock;
+      }
+    }
+
+    // Generate a SKU for every color-size variant
+    const colorsWithSKUs = assignVariantSKUs(parsedColors);
+
     const productData = {
       name,
       description,
-      price: Number(price),
+      price: sellingPrice,
+      cost_price: productCost,
       category,
-      colors: parsedColors,
-      bestSeller: bestSeller === "true",
+      colors: colorsWithSKUs,
+      bestSeller: bestSeller === "true" || bestSeller === true,
       image: imageUrls,
     };
 
@@ -87,7 +161,118 @@ const addProduct = async (req, res) => {
       data: product,
     });
   } catch (error) {
-    console.log("🔥 ERROR:", error);
+    console.log("ADD PRODUCT ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+// =======================
+// LIST PRODUCTS FOR INVENTORY
+// =======================
+const listProducts = async (req, res) => {
+  try {
+    // Return ALL products, including completely out-of-stock products.
+    // Inventory management needs to display those products too.
+    const products = await getAllProducts();
+
+    res.json({
+      success: true,
+      data: products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// =======================
+// POS PRODUCT SEARCH
+// =======================
+const searchProducts = async (req, res) => {
+  try {
+    const query = req.query.query?.trim();
+
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a product name or SKU",
+      });
+    }
+
+    const products = await getAllProducts();
+
+    const searchTerm = query.toLowerCase();
+
+    const results = products
+      .map((product) => {
+        const nameMatches = product.name
+          ?.toLowerCase()
+          .includes(searchTerm);
+
+        // Keep only variants with available stock
+        const availableColors = (product.colors || [])
+          .map((colorEntry) => {
+            const availableSizes = (colorEntry.sizes || [])
+              .filter((sizeEntry) => {
+                const hasStock = Number(sizeEntry.stock) > 0;
+
+                // If the product name matches, show all available variants.
+                // Otherwise, search by SKU.
+                const skuMatches = sizeEntry.sku
+                  ?.toLowerCase()
+                  .includes(searchTerm);
+
+                return hasStock && (nameMatches || skuMatches);
+              })
+              .map((sizeEntry) => ({
+                size: sizeEntry.size,
+                sku: sizeEntry.sku,
+                stock: Number(sizeEntry.stock),
+              }));
+
+            return {
+              color: colorEntry.color,
+              sizes: availableSizes,
+            };
+          })
+          .filter((colorEntry) => colorEntry.sizes.length > 0);
+
+        // Exclude products without matching available variants
+        if (availableColors.length === 0) {
+          return null;
+        }
+
+        return {
+          _id: product._id,
+          name: product.name,
+          description: product.description,
+          image: product.image,
+          category: product.category,
+
+          // Default product prices
+          price: Number(product.price),
+          cost_price: Number(product.cost_price),
+
+          colors: availableColors,
+        };
+      })
+      .filter(Boolean);
+
+    return res.json({
+      success: true,
+      count: results.length,
+      data: results,
+    });
+  } catch (error) {
+    console.log("POS PRODUCT SEARCH ERROR:", error);
+
     return res.status(500).json({
       success: false,
       message: error.message,
@@ -96,22 +281,7 @@ const addProduct = async (req, res) => {
 };
 
 // =======================
-const listProducts = async (req, res) => {
-  try {
-    const products = await getAllProducts();
-
-    const available = products.filter((p) =>
-      p.colors?.some((c) =>
-        c.sizes?.some((s) => s.stock > 0)
-      )
-    );
-
-    res.json({ success: true, data: available });
-  } catch (e) {
-    res.json({ success: false, message: e.message });
-  }
-};
-
+// GET SINGLE PRODUCT
 // =======================
 const singleProduct = async (req, res) => {
   try {
@@ -120,41 +290,187 @@ const singleProduct = async (req, res) => {
     const product = await getProductById(Number(id));
 
     if (!product) {
-      return res.json({ success: false, message: "Not found" });
+      return res.json({
+        success: false,
+        message: "Not found",
+      });
     }
 
-    res.json({ success: true, data: product });
-  } catch (e) {
-    res.json({ success: false, message: e.message });
+    res.json({
+      success: true,
+      data: product,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
+// =======================
+// UPDATE STOCK
 // =======================
 const updateStock = async (req, res) => {
   try {
     const { productId, color, size, stock } = req.body;
 
+    const newStock = Number(stock);
+
+    if (!Number.isInteger(newStock) || newStock < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Stock must be a non-negative integer",
+      });
+    }
+
     const product = await getProductById(Number(productId));
 
     if (!product) {
-      return res.json({ success: false, message: "Not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
     }
 
-    const colorEntry = product.colors.find(c => c.color === color);
-    const sizeEntry = colorEntry?.sizes.find(s => s.size === size);
+    const colorEntry = product.colors.find(
+      (entry) => entry.color === color
+    );
+
+    const sizeEntry = colorEntry?.sizes.find(
+      (entry) => entry.size === size
+    );
 
     if (!sizeEntry) {
-      return res.json({ success: false, message: "Size not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Size not found",
+      });
     }
 
-    sizeEntry.stock = stock;
+    // Only update stock. Existing SKU remains unchanged.
+    sizeEntry.stock = newStock;
 
-    await updateProductColors(product._id, product.colors);
+    const updatedProduct = await updateProductColors(
+      product._id,
+      product.colors
+    );
 
-    res.json({ success: true, message: "Updated" });
-  } catch (e) {
-    res.json({ success: false, message: e.message });
+    res.json({
+      success: true,
+      message: "Stock updated successfully",
+      data: updatedProduct,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-export { addProduct, listProducts, singleProduct, updateStock };
+
+// =======================
+// RESTOCK PRODUCT
+// =======================
+const restock = async (req, res) => {
+  try {
+    const {
+      productId,
+      color,
+      size,
+      quantity,
+      purchaseCost,
+      sellingPrice,
+    } = req.body;
+
+    const id = Number(productId);
+    const restockQuantity = Number(quantity);
+    const cost = Number(purchaseCost);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID",
+      });
+    }
+
+    if (!color?.trim() || !size?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Color and size are required",
+      });
+    }
+
+    if (!Number.isInteger(restockQuantity) || restockQuantity <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Restock quantity must be a positive integer",
+      });
+    }
+
+    if (!Number.isFinite(cost) || cost <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Purchase cost must be greater than zero",
+      });
+    }
+
+    let newSellingPrice;
+
+    if (
+      sellingPrice !== undefined &&
+      sellingPrice !== null &&
+      sellingPrice !== ""
+    ) {
+      newSellingPrice = Number(sellingPrice);
+
+      if (!Number.isFinite(newSellingPrice) || newSellingPrice <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Selling price must be greater than zero",
+        });
+      }
+    }
+
+    const updatedProduct = await restockProduct({
+      productId: id,
+      color,
+      size,
+      quantity: restockQuantity,
+      purchaseCost: cost,
+      sellingPrice: newSellingPrice,
+    });
+
+    if (!updatedProduct) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Product restocked successfully",
+      data: updatedProduct,
+    });
+  } catch (error) {
+    console.log("RESTOCK PRODUCT ERROR:", error);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to restock product",
+    });
+  }
+};
+
+
+export {
+  addProduct,
+  listProducts,
+  singleProduct,
+  updateStock,
+  searchProducts,
+  restock,
+
+};

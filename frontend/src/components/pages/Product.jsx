@@ -16,6 +16,7 @@ function Product() {
   const [selectedSize, setSelectedSize] = useState('')
   const [loading, setLoading] = useState(true)
   const [addingToCart, setAddingToCart] = useState(false)
+  const [quantity, setQuantity] = useState(1)
 
   const fetchProductData = () => {
     setLoading(true)
@@ -32,22 +33,41 @@ function Product() {
   }, [productId, products])
 
   const handleAddToCart = async () => {
-    if (!selectedColor || !selectedSize) {
-      toast.warning("Please select both color and size")
-      return
-    }
-    setAddingToCart(true)
-    try {
-      await addToCart(productData._id, selectedColor, selectedSize);
-
-      toast.success("Product added to cart!")
-    } catch (err) {
-      toast.error("Failed to add product to cart.")
-      console.error(err)
-    } finally {
-      setAddingToCart(false)
-    }
+  if (!selectedColor || !selectedSize) {
+    toast.warning("Please select both color and size")
+    return
   }
+
+  const colorObj = productData.colors.find(c => c.color === selectedColor)
+  const sizeObj = colorObj?.sizes.find(s => s.size === selectedSize)
+  const availableStock = sizeObj?.stock ?? 0
+
+  if (availableStock === 0) {
+    toast.warning("This size is out of stock")
+    return
+  }
+
+  if (quantity < 1 || quantity > availableStock) {
+    toast.warning(`Only ${availableStock} items are available`)
+    return
+  }
+
+  setAddingToCart(true)
+
+  try {
+  await addToCart(
+    productData._id,
+    selectedColor,
+    selectedSize,
+    quantity
+  );
+} catch (err) {
+  toast.error("Failed to add product to cart.");
+  console.error(err);
+} finally {
+  setAddingToCart(false);
+}
+}
 
   if (loading) {
     return <ProductDetailSkeleton />
@@ -98,10 +118,11 @@ function Product() {
                 <button
                   key={index}
                   onClick={() => {
-                    setSelectedColor(colorObj.color)
-                    setSelectedSize('')
-                    setMainImage(colorObj.image?.[0] || productData.image?.[0] || placeholder)
-                  }}
+  setSelectedColor(colorObj.color)
+  setSelectedSize('')
+  setQuantity(1)
+  setMainImage(colorObj.image?.[0] || productData.image?.[0] || placeholder)
+}}
                   className={`border py-2 px-4 ${colorObj.color === selectedColor ? 'border-orange-500' : ''}`}
                 >
                   {colorObj.color}
@@ -117,30 +138,121 @@ function Product() {
             const inStockSizes = sizes.filter(s => s.stock > 0)
             const selectedSizeStock = sizes.find(s => s.size === selectedSize)?.stock ?? 0
             return (
-              <div className='flex flex-col gap-4 my-4'>
-                <p>Select Size</p>
-                <div className='flex gap-2 flex-wrap'>
-                  {sizes.map((sizeObj, index) => {
-                    const outOfStock = sizeObj.stock === 0
-                    return (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => !outOfStock && setSelectedSize(sizeObj.size)}
-                        disabled={outOfStock}
-                        className={`border py-2 px-4 ${outOfStock ? 'bg-gray-100 text-gray-400 cursor-not-allowed line-through' : 'bg-gray-100 hover:border-orange-400'} ${sizeObj.size === selectedSize ? 'border-orange-500 ring-1 ring-orange-500' : ''}`}
-                      >
-                        {sizeObj.size} {outOfStock ? '(Out of stock)' : `(${sizeObj.stock})`}
-                      </button>
-                    )
-                  })}
-                </div>
-                {inStockSizes.length === 0 && (
-                  <p className="text-amber-600 text-sm font-medium">This color is currently out of stock.</p>
-                )}
-              </div>
+          <div className="flex flex-col gap-4 my-4">
+  <div>
+    <p className="font-medium text-gray-800">Select Size</p>
+    <p className="text-sm text-gray-500 mt-1">
+      Numbers indicate available items for each size.
+    </p>
+  </div>
+
+  <div className="flex gap-3 flex-wrap">
+    {sizes.map((sizeObj, index) => {
+      const outOfStock = sizeObj.stock === 0
+
+      return (
+        <button
+          key={index}
+          type="button"
+          onClick={() => {
+  if (!outOfStock) {
+    setSelectedSize(sizeObj.size)
+    setQuantity(1)
+  }
+}}
+          disabled={outOfStock}
+          className={`flex flex-col items-center gap-1 min-w-[75px] border rounded-lg py-3 px-4 transition-all
+            ${outOfStock
+              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+              : 'bg-white hover:border-orange-400'
+            }
+            ${sizeObj.size === selectedSize
+              ? 'border-orange-500 ring-1 ring-orange-500 bg-orange-50'
+              : ''
+            }`}
+        >
+          <span className="font-semibold">{sizeObj.size}</span>
+
+          <span className={`text-xs ${
+            outOfStock ? 'text-red-400' : 'text-green-600'
+          }`}>
+            {outOfStock ? 'Out of stock' : `${sizeObj.stock} available`}
+          </span>
+        </button>
+      )
+    })}
+  </div>
+
+  {inStockSizes.length === 0 && (
+    <p className="text-amber-600 text-sm font-medium">
+      This color is currently out of stock.
+    </p>
+  )}
+</div>
             )
           })()}
+
+          {/* Quantity Selector */}
+{selectedSize && (() => {
+  const colorObj = productData.colors.find(
+    c => c.color === selectedColor
+  )
+
+  const availableStock = colorObj?.sizes.find(
+    s => s.size === selectedSize
+  )?.stock ?? 0
+
+  if (availableStock === 0) return null
+
+  return (
+    <div className="my-6">
+      <div className="mb-3">
+        <p className="font-medium text-gray-800">Quantity</p>
+        <p className="text-sm text-gray-500 mt-1">
+          {availableStock} items available
+        </p>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+
+          <button
+            type="button"
+            onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+            disabled={quantity <= 1}
+            className="px-4 py-2 hover:bg-gray-100 disabled:opacity-40"
+          >
+            −
+          </button>
+
+          <span className="px-5 py-2 min-w-[55px] text-center font-semibold">
+            {quantity}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setQuantity(prev => Math.min(availableStock, prev + 1))}
+            disabled={quantity >= availableStock}
+            className="px-4 py-2 hover:bg-gray-100 disabled:opacity-40"
+          >
+            +
+          </button>
+
+        </div>
+
+        <span className="text-xs text-gray-500">
+          Maximum: {availableStock}
+        </span>
+      </div>
+
+      {quantity >= availableStock && (
+        <p className="text-xs text-amber-600 mt-2">
+          You've selected all available items.
+        </p>
+      )}
+    </div>
+  )
+})()}
 
           {/* Add To Cart */}
           {(() => {

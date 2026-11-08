@@ -1,4 +1,3 @@
-// FRONTEND (Add.jsx)
 
 import React, { useState } from "react";
 import { assets } from "../assets/assets";
@@ -19,10 +18,10 @@ const Add = ({ token }) => {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("T-shirt");
   const [price, setPrice] = useState("");
+  const [costPrice, setCostPrice] = useState("");
   const [bestSeller, setBestSeller] = useState(false);
 
   const [colors, setColors] = useState([{ color: "", sizes: [] }]);
-
   const [submitting, setSubmitting] = useState(false);
 
   const onSubmitHandler = async (e) => {
@@ -39,8 +38,7 @@ const Add = ({ token }) => {
           sizes: c.sizes
             .filter(
               (s) =>
-                typeof s.stock === "number" &&
-                !Number.isNaN(s.stock) &&
+                Number.isInteger(s.stock) &&
                 s.stock >= 0
             )
             .map((s) => ({
@@ -55,12 +53,36 @@ const Add = ({ token }) => {
         return;
       }
 
+      if (!name.trim() || !description.trim()) {
+        toast.error("Enter product name and description");
+        return;
+      }
+
+      if (
+        price === "" ||
+        !Number.isFinite(Number(price)) ||
+        Number(price) <= 0
+      ) {
+        toast.error("Enter a valid selling price");
+        return;
+      }
+
+      if (
+        costPrice === "" ||
+        !Number.isFinite(Number(costPrice)) ||
+        Number(costPrice) < 0
+      ) {
+        toast.error("Enter a valid cost price");
+        return;
+      }
+
       const formData = new FormData();
 
-      formData.append("name", name);
-      formData.append("description", description);
+      formData.append("name", name.trim());
+      formData.append("description", description.trim());
       formData.append("category", category);
       formData.append("price", price);
+      formData.append("costPrice", costPrice);
       formData.append("bestSeller", String(bestSeller));
       formData.append("colors", JSON.stringify(cleanedColors));
 
@@ -86,6 +108,7 @@ const Add = ({ token }) => {
         setDescription("");
         setCategory("T-shirt");
         setPrice("");
+        setCostPrice("");
         setBestSeller(false);
 
         setImage1(null);
@@ -120,17 +143,14 @@ const Add = ({ token }) => {
             <label key={idx} htmlFor={`image${idx + 1}`}>
               <img
                 className="w-20"
-                src={
-                  !img
-                    ? assets.upload_area
-                    : URL.createObjectURL(img)
-                }
+                src={!img ? assets.upload_area : URL.createObjectURL(img)}
                 alt=""
               />
 
               <input
                 hidden
                 type="file"
+                accept="image/*"
                 id={`image${idx + 1}`}
                 onChange={(e) => {
                   const file = e.target.files[0];
@@ -170,7 +190,6 @@ const Add = ({ token }) => {
       <div className="flex flex-col sm:flex-row gap-2 w-full sm:gap-8">
         <div>
           <p className="mb-2">Product category</p>
-
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
@@ -186,14 +205,28 @@ const Add = ({ token }) => {
         </div>
 
         <div>
-          <p className="mb-2">Product price</p>
-
+          <p className="mb-2">Selling Price (ETB)</p>
           <input
+            required
             type="number"
-            min="0"
+            min="0.01"
+            step="0.01"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            className="px-3 py-2 sm:w-[120px]"
+            className="px-3 py-2 sm:w-[150px]"
+          />
+        </div>
+
+        <div>
+          <p className="mb-2">Cost Price (ETB)</p>
+          <input
+            required
+            type="number"
+            min="0"
+            step="0.01"
+            value={costPrice}
+            onChange={(e) => setCostPrice(e.target.value)}
+            className="px-3 py-2 sm:w-[150px]"
           />
         </div>
       </div>
@@ -202,10 +235,7 @@ const Add = ({ token }) => {
         <p className="mb-2">Colors & Stock</p>
 
         {colors.map((c, idx) => (
-          <div
-            key={idx}
-            className="border p-2 mb-2 rounded"
-          >
+          <div key={idx} className="border p-2 mb-2 rounded">
             <input
               type="text"
               placeholder="Color name"
@@ -219,67 +249,38 @@ const Add = ({ token }) => {
             />
 
             <div className="flex flex-wrap gap-2">
-              {(category === "Shoes"
-                ? shoeSizes
-                : clothingSizes
-              ).map((size) => {
-                const stockObj = c.sizes.find(
-                  (s) => s.size === size
-                );
+              {(category === "Shoes" ? shoeSizes : clothingSizes).map((size) => {
+                const stockObj = c.sizes.find((s) => s.size === size);
 
                 return (
-                  <div
-                    key={size}
-                    className="flex items-center gap-1"
-                  >
+                  <div key={size} className="flex items-center gap-1">
                     <span>{size}</span>
 
                     <input
                       type="number"
                       min="0"
+                      step="1"
                       placeholder="0"
                       value={stockObj?.stock ?? ""}
                       onChange={(e) => {
                         const raw = e.target.value;
-
-                        const value =
-                          raw === ""
-                            ? ""
-                            : Number(raw);
+                        const value = raw === "" ? "" : Number(raw);
 
                         const newColors = [...colors];
 
-                        const sizeIndex =
-                          newColors[
-                            idx
-                          ].sizes.findIndex(
-                            (s) =>
-                              s.size === size
-                          );
+                        const sizeIndex = newColors[idx].sizes.findIndex(
+                          (s) => s.size === size
+                        );
 
                         if (raw === "") {
                           if (sizeIndex > -1) {
-                            newColors[
-                              idx
-                            ].sizes.splice(
-                              sizeIndex,
-                              1
-                            );
+                            newColors[idx].sizes.splice(sizeIndex, 1);
                           }
-                        } else {
+                        } else if (Number.isInteger(value) && value >= 0) {
                           if (sizeIndex > -1) {
-                            newColors[
-                              idx
-                            ].sizes[
-                              sizeIndex
-                            ].stock = value;
+                            newColors[idx].sizes[sizeIndex].stock = value;
                           } else {
-                            newColors[
-                              idx
-                            ].sizes.push({
-                              size,
-                              stock: value,
-                            });
+                            newColors[idx].sizes.push({ size, stock: value });
                           }
                         }
 
@@ -296,11 +297,7 @@ const Add = ({ token }) => {
               type="button"
               className="mt-2 text-red-500"
               onClick={() =>
-                setColors(
-                  colors.filter(
-                    (_, i) => i !== idx
-                  )
-                )
+                setColors(colors.filter((_, i) => i !== idx))
               }
             >
               Remove Color
@@ -312,10 +309,7 @@ const Add = ({ token }) => {
           type="button"
           className="mt-2 bg-gray-200 px-3 py-1 rounded"
           onClick={() =>
-            setColors([
-              ...colors,
-              { color: "", sizes: [] },
-            ])
+            setColors([...colors, { color: "", sizes: [] }])
           }
         >
           Add Color
@@ -327,20 +321,16 @@ const Add = ({ token }) => {
           id="bestseller"
           type="checkbox"
           checked={bestSeller}
-          onChange={() =>
-            setBestSeller((prev) => !prev)
-          }
+          onChange={() => setBestSeller((prev) => !prev)}
         />
 
-        <label htmlFor="bestseller">
-          Add to bestseller
-        </label>
+        <label htmlFor="bestseller">Add to bestseller</label>
       </div>
 
       <button
         type="submit"
         disabled={submitting}
-        className="w-28 py-3 mt-4 bg-black text-white"
+        className="w-28 py-3 mt-4 bg-black text-white disabled:opacity-50"
       >
         {submitting ? "ADDING..." : "ADD"}
       </button>

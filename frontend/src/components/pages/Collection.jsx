@@ -4,6 +4,7 @@ import { assets } from '../../assets/assets'
 import Title from '../Title'
 import ProductItem from '../ProductItem'
 import { ProductGridSkeleton } from '../Skeleton'
+import { SearchX } from "lucide-react";
 
 function Collection() {
   const { products, search, showSearch, productsLoading, productsError } = useContext(ShopContext)
@@ -144,9 +145,20 @@ function Collection() {
         ) : loading ? (
           <ProductGridSkeleton count={12} columns="grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" gapClass="gap-6" />
         ) : filterProducts.length === 0 ? (
-          <div className='text-center text-gray-400 py-10 text-sm sm:text-base'>
-            No products found.
-          </div>
+          <div className="flex flex-col items-center justify-center text-center py-16 px-6 bg-white border border-gray-200 rounded-2xl shadow-sm">
+  <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gray-100">
+    <SearchX className="w-8 h-8 text-gray-400" />
+  </div>
+
+  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+    No products found
+  </h3>
+
+  <p className="text-sm text-gray-500 max-w-sm">
+    We couldn't find any products matching your search.
+    Try adjusting your filters or search with different keywords.
+  </p>
+</div>
         ) : (
           <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'>
             {filterProducts.map((item) => (

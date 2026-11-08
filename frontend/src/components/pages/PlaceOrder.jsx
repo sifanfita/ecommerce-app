@@ -1,3 +1,4 @@
+
 import React, { useContext, useEffect, useState } from "react";
 import Title from "../Title";
 import CartTotal from "../CartTotal";
@@ -9,23 +10,62 @@ import { toast } from "react-toastify";
 
 function PlaceOrder() {
   const {
-   
-    
     handlePlaceOrder,
     deliveryInfo,
     setDeliveryInfo,
     getCartCount,
     navigate,
+    refreshProducts,
   } = useContext(ShopContext);
 
   const [loading, setLoading] = useState(false);
+  const [refreshingProducts, setRefreshingProducts] = useState(true);
+  const [refreshFailed, setRefreshFailed] = useState(false);
   const [errors, setErrors] = useState({});
   const [paymentProof, setPaymentProof] = useState(null);
 
-  // Redirect if cart is empty
+  // Refresh products and prices whenever checkout opens.
   useEffect(() => {
-    if (getCartCount() === 0) navigate("/cart");
-  }, [getCartCount, navigate]);
+    let active = true;
+
+    const refresh = async () => {
+      setRefreshingProducts(true);
+      setRefreshFailed(false);
+
+      const success = await refreshProducts({ showError: false });
+
+      if (!active) return;
+
+      setRefreshingProducts(false);
+      setRefreshFailed(!success);
+
+      if (!success) {
+        toast.error("Couldn't refresh product prices. Please try again.");
+      }
+    };
+
+    refresh();
+
+    return () => {
+      active = false;
+    };
+  }, [refreshProducts]);
+
+  // Redirect only after products have been refreshed successfully.
+  useEffect(() => {
+    if (
+      !refreshingProducts &&
+      !refreshFailed &&
+      getCartCount() === 0
+    ) {
+      navigate("/cart");
+    }
+  }, [
+    refreshingProducts,
+    refreshFailed,
+    getCartCount,
+    navigate,
+  ]);
 
   const requiredFields = [
     "firstName",
@@ -39,31 +79,47 @@ function PlaceOrder() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setDeliveryInfo({ ...deliveryInfo, [name]: value });
 
-    // live validation
+    setDeliveryInfo((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
     if (!value.trim()) {
-      setErrors((prev) => ({ ...prev, [name]: "This field is required" }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "This field is required",
+      }));
     } else if (name === "email") {
-      setErrors((prev) => ({ ...prev, [name]: validateEmail(value) || "" }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: validateEmail(value) || "",
+      }));
     } else if (name === "phone") {
-      setErrors((prev) => ({ ...prev, [name]: validatePhone(value) || "" }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: validatePhone(value) || "",
+      }));
     } else {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
     }
   };
 
   const validate = () => {
-    let newErrors = {};
+    const newErrors = {};
+
     requiredFields.forEach((field) => {
       if (!deliveryInfo[field]?.trim()) {
         newErrors[field] = "This field is required";
       } else if (field === "email") {
-        const msg = validateEmail(deliveryInfo[field]);
-        if (msg) newErrors[field] = msg;
+        const message = validateEmail(deliveryInfo[field]);
+        if (message) newErrors[field] = message;
       } else if (field === "phone") {
-        const msg = validatePhone(deliveryInfo[field]);
-        if (msg) newErrors[field] = msg;
+        const message = validatePhone(deliveryInfo[field]);
+        if (message) newErrors[field] = message;
       }
     });
 
@@ -72,11 +128,34 @@ function PlaceOrder() {
     }
 
     setErrors(newErrors);
+
     return Object.keys(newErrors).length === 0;
+  };
+
+  const retryRefresh = async () => {
+    setRefreshingProducts(true);
+    setRefreshFailed(false);
+
+    const success = await refreshProducts({ showError: false });
+
+    setRefreshingProducts(false);
+    setRefreshFailed(!success);
+
+    if (success) {
+      toast.success("Product prices updated successfully.");
+    } else {
+      toast.error("Couldn't refresh product prices. Please try again.");
+    }
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
+
+    if (refreshingProducts || refreshFailed) {
+      toast.error("Please update product prices before placing your order.");
+      return;
+    }
+
     if (!validate()) {
       toast.error("Please fill all required fields and upload payment proof.");
       return;
@@ -98,13 +177,16 @@ function PlaceOrder() {
   return (
     <form
       onSubmit={onSubmit}
-      className={`flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] ${loading ? "pointer-events-none opacity-95" : ""}`}
+      className={`flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] ${
+        loading ? "pointer-events-none opacity-95" : ""
+      }`}
     >
       <div className="flex flex-col gap-4 w-full sm:max-w-[480px]">
         <CheckoutSteps currentStep={2} />
 
         <div className="text-xl sm:text-2xl my-3 flex items-center justify-between flex-wrap gap-2">
           <Title text1="DELIVERY" text2="INFORMATION" />
+
           <button
             type="button"
             onClick={() => navigate("/cart")}
@@ -148,7 +230,13 @@ function PlaceOrder() {
           <div key={field}>
             <input
               name={field}
-              type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
+              type={
+                field === "email"
+                  ? "email"
+                  : field === "phone"
+                  ? "tel"
+                  : "text"
+              }
               value={deliveryInfo[field]}
               onChange={handleChange}
               className={inputClass(field)}
@@ -180,6 +268,30 @@ function PlaceOrder() {
         </div>
 
         <div className="mt-8 min-w-80">
+          {refreshingProducts && (
+            <p className="text-sm text-gray-500 mb-3">
+              Updating product prices...
+            </p>
+          )}
+
+          {refreshFailed && (
+            <div className="mb-4 border border-red-300 rounded p-3">
+              <p className="text-sm text-red-600 mb-2">
+                Unable to update product prices. Please retry before placing
+                your order.
+              </p>
+
+              <button
+                type="button"
+                onClick={retryRefresh}
+                disabled={refreshingProducts || loading}
+                className="text-sm underline font-medium disabled:opacity-50"
+              >
+                Retry price update
+              </button>
+            </div>
+          )}
+
           <CartTotal />
         </div>
 
@@ -205,29 +317,43 @@ function PlaceOrder() {
             <label className="block mb-2 text-sm font-medium">
               Upload Proof of Payment
             </label>
+
             <input
               type="file"
-              onChange={(e) => setPaymentProof(e.target.files[0])}
+              accept="image/*"
+              onChange={(e) => setPaymentProof(e.target.files[0] || null)}
               className={`border p-2 w-full ${
-                errors.paymentProof && "border-red-500"
+                errors.paymentProof ? "border-red-500" : ""
               }`}
               disabled={loading}
             />
+
             {errors.paymentProof && (
-              <p className="text-red-500 text-xs">{errors.paymentProof}</p>
+              <p className="text-red-500 text-xs">
+                {errors.paymentProof}
+              </p>
             )}
           </div>
 
           <div className="w-full text-end mt-8">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || refreshingProducts || refreshFailed}
               className={`flex items-center justify-center gap-2 bg-black text-white px-16 py-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none ${
                 loading ? "opacity-80" : ""
               }`}
             >
-              {loading && <LoaderSpinner className="w-4 h-4 border-white border-t-transparent" />}
-              {loading ? "Placing Order..." : "PLACE ORDER"}
+              {loading && (
+                <LoaderSpinner className="w-4 h-4 border-white border-t-transparent" />
+              )}
+
+              {loading
+                ? "Placing Order..."
+                : refreshingProducts
+                ? "Updating Prices..."
+                : refreshFailed
+                ? "Update Prices First"
+                : "PLACE ORDER"}
             </button>
           </div>
         </div>
