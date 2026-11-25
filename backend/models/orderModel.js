@@ -16,7 +16,9 @@ const mapOrderRow = (row) => {
       : typeof row.address === "string"
       ? JSON.parse(row.address)
       : row.address;
+
   let normalizedDate = null;
+
   if (row.date != null) {
     if (row.date instanceof Date) {
       normalizedDate = row.date.toISOString();
@@ -44,6 +46,7 @@ const mapOrderRow = (row) => {
     address: parsedAddress,
     date: normalizedDate,
     paymentProof: row.payment_proof,
+    paymentMethod: row.payment_method || null,
   };
 };
 
@@ -62,8 +65,8 @@ export const createOrder = async ({
 
   const { rows } = await pool.query(
     `INSERT INTO orders
-      (user_id, items, amount, address, status, payment_proof)
-     VALUES ($1, $2, $3, $4, $5, $6)
+      (user_id, items, amount, address, status, payment_proof, payment_method)
+     VALUES ($1, $2, $3, $4, $5, $6, 'online_transfer')
      RETURNING *`,
     [
       userId,
@@ -80,23 +83,28 @@ export const createOrder = async ({
 
 export const getAllOrders = async () => {
   const pool = await getPool();
+
   const { rows } = await pool.query(
     "SELECT * FROM orders ORDER BY date DESC"
   );
+
   return rows.map(mapOrderRow);
 };
 
 export const getOrdersByUserId = async (userId) => {
   const pool = await getPool();
+
   const { rows } = await pool.query(
     "SELECT * FROM orders WHERE user_id = $1 ORDER BY date DESC",
     [userId]
   );
+
   return rows.map(mapOrderRow);
 };
 
 export const updateOrderStatusById = async (orderId, status) => {
   const pool = await getPool();
+
   const { rows } = await pool.query(
     `UPDATE orders
      SET status = $1
@@ -104,9 +112,9 @@ export const updateOrderStatusById = async (orderId, status) => {
      RETURNING *`,
     [status, orderId]
   );
+
   return mapOrderRow(rows[0]);
 };
-
 
 const normalizeVariant = (value) =>
   String(value ?? "").trim().toLowerCase();
@@ -283,8 +291,8 @@ export const createOrderWithStock = async ({
     // Create order using the server-calculated amount.
     const { rows } = await client.query(
       `INSERT INTO orders
-        (user_id, items, amount, address, status, payment_proof)
-       VALUES ($1, $2, $3, $4, $5, $6)
+        (user_id, items, amount, address, status, payment_proof, payment_method)
+       VALUES ($1, $2, $3, $4, $5, $6, 'online_transfer')
        RETURNING *`,
       [
         Number(userId),
@@ -319,13 +327,12 @@ export const updateOrderStatusWithStock = async (orderId, newStatus) => {
   let transactionStarted = false;
 
   const allowedStatuses = [
-    "Order placed",
-    "Processing",
-    "Out for Delivery",
-    "Delivered",
-    "Cancelled",
-  ];
-
+  "Order placed",
+  "Approved",
+  "Out for Delivery",
+  "Delivered",
+  "Cancelled",
+];
   try {
     if (!allowedStatuses.includes(newStatus)) {
       throw new Error("Invalid order status");
@@ -360,13 +367,13 @@ export const updateOrderStatusWithStock = async (orderId, newStatus) => {
     }
 
     if (
-  ["Out for Delivery", "Delivered"].includes(order.status) &&
-  newStatus === "Cancelled"
-) {
-  throw new Error(
-    "An order cannot be cancelled after it is out for delivery"
-  );
-}
+      ["Out for Delivery", "Delivered"].includes(order.status) &&
+      newStatus === "Cancelled"
+    ) {
+      throw new Error(
+        "An order cannot be cancelled after it is out for delivery"
+      );
+    }
 
     // Restore stock only when cancelling for the first time.
     if (newStatus === "Cancelled") {
@@ -485,7 +492,6 @@ export const updateOrderStatusWithStock = async (orderId, newStatus) => {
   }
 };
 
-
 // Safely parse product colors from PostgreSQL
 const parsePOSColors = (value) => {
   if (typeof value === "string") {
@@ -502,7 +508,7 @@ const normalizePOSValue = (value) =>
 // =======================
 // POS – CREATE IN-PERSON SALE
 // =======================
-export const createPOSSale = async ({ sellerId, items }) => {
+export const createPOSSale = async ({ sellerId, items, paymentMethod }) => {
   const pool = await getPool();
   const client = await pool.connect();
   let transactionStarted = false;
@@ -516,8 +522,15 @@ export const createPOSSale = async ({ sellerId, items }) => {
       throw new Error("Sale must contain at least one product");
     }
 
+    if (!["cash", "online_transfer"].includes(paymentMethod)) {
+      throw new Error(
+        "Select a valid payment method (cash or online transfer)"
+      );
+    }
+
     await client.query("BEGIN");
     transactionStarted = true;
+
     // Get unique product IDs and lock them in a consistent order.
     const productIds = [
       ...new Set(
@@ -656,10 +669,10 @@ export const createPOSSale = async ({ sellerId, items }) => {
     // Create the POS sale.
     const { rows: saleRows } = await client.query(
       `INSERT INTO pos_sales
-         (seller_id, total_amount)
-       VALUES ($1, $2)
+         (seller_id, total_amount, payment_method)
+       VALUES ($1, $2, $3)
        RETURNING *`,
-      [Number(sellerId), totalAmount]
+      [Number(sellerId), totalAmount, paymentMethod]
     );
 
     const sale = saleRows[0];
@@ -704,14 +717,14 @@ export const createPOSSale = async ({ sellerId, items }) => {
       items: saleItems,
     };
   } catch (error) {
-  if (transactionStarted) {
-    await client.query("ROLLBACK");
-  }
+    if (transactionStarted) {
+      await client.query("ROLLBACK");
+    }
 
-  throw error;
-} finally {
-  client.release();
-}
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 
@@ -728,6 +741,7 @@ export const getSalesHistory = async ({
       SELECT
         o.id,
         'Online'::text AS sale_type,
+        COALESCE(o.payment_method, 'online_transfer') AS payment_method,
         o.date,
         o.user_id AS reference_user_id,
         o.amount AS total_amount,
@@ -771,7 +785,7 @@ export const getSalesHistory = async ({
 
       FROM orders o
       WHERE o.status IN (
-        'Processing',
+        'Approved',
         'Out for Delivery',
         'Delivered'
       )
@@ -781,6 +795,7 @@ export const getSalesHistory = async ({
       SELECT
         ps.id,
         'POS'::text AS sale_type,
+        ps.payment_method,
         ps.date,
         ps.seller_id AS reference_user_id,
         ps.total_amount,
@@ -810,10 +825,12 @@ export const getSalesHistory = async ({
       FROM pos_sales ps
       INNER JOIN pos_sale_items psi
         ON psi.sale_id = ps.id
+
       GROUP BY
         ps.id,
         ps.seller_id,
         ps.total_amount,
+        ps.payment_method,
         ps.date
     ),
 
@@ -826,11 +843,25 @@ export const getSalesHistory = async ({
     SELECT *
     FROM all_sales
     WHERE
-      ($1::date IS NULL OR date >= $1::date)
+      (
+        $1::date IS NULL
+        OR date >= (
+          ($1::date::timestamp AT TIME ZONE 'Africa/Addis_Ababa')
+          AT TIME ZONE 'UTC'
+        )
+      )
       AND
-      ($2::date IS NULL OR date < ($2::date + INTERVAL '1 day'))
+      (
+        $2::date IS NULL
+        OR date < (
+          (($2::date + INTERVAL '1 day')
+            AT TIME ZONE 'Africa/Addis_Ababa')
+          AT TIME ZONE 'UTC'
+        )
+      )
       AND
       ($3 = 'All' OR sale_type = $3)
+
     ORDER BY date DESC, id DESC
     `,
     [startDate, endDate, type]
@@ -840,6 +871,7 @@ export const getSalesHistory = async ({
     ...sale,
     id: Number(sale.id),
     reference_user_id: Number(sale.reference_user_id),
+    payment_method: sale.payment_method || null,
     total_amount: Number(sale.total_amount),
     profit: sale.profit == null ? null : Number(sale.profit),
     profit_available: sale.profit_available,
@@ -863,21 +895,51 @@ export const getSalesHistory = async ({
     0
   );
 
+  const cashSales = sales.filter(
+    (sale) => sale.payment_method === "cash"
+  );
+
+  const onlineTransferSales = sales.filter(
+    (sale) => sale.payment_method === "online_transfer"
+  );
+
+  const unknownPaymentSales = sales.filter(
+    (sale) =>
+      !["cash", "online_transfer"].includes(sale.payment_method)
+  );
+
+  const sumRevenue = (list) =>
+    list.reduce((sum, sale) => sum + sale.total_amount, 0);
+
   return {
     sales,
     summary: {
       totalRevenue,
       totalProfit,
+
       onlineSalesCount: sales.filter(
         (sale) => sale.sale_type === "Online"
       ).length,
+
       posSalesCount: sales.filter(
         (sale) => sale.sale_type === "POS"
       ).length,
+
       totalSalesCount: sales.length,
+
       profitAvailableCount: knownProfitSales.length,
+
       profitUnavailableCount:
         sales.length - knownProfitSales.length,
+
+      cashRevenue: sumRevenue(cashSales),
+      cashSalesCount: cashSales.length,
+
+      onlineTransferRevenue: sumRevenue(onlineTransferSales),
+      onlineTransferSalesCount: onlineTransferSales.length,
+
+      unknownPaymentRevenue: sumRevenue(unknownPaymentSales),
+      unknownPaymentSalesCount: unknownPaymentSales.length,
     },
   };
 };
@@ -885,6 +947,8 @@ export const getSalesHistory = async ({
 // =======================
 // DASHBOARD – SALES ANALYTICS
 // =======================
+
+
 export const getSalesAnalytics = async ({
   startDate,
   endDate,
@@ -892,7 +956,6 @@ export const getSalesAnalytics = async ({
 }) => {
   const pool = await getPool();
 
-  // Only allow supported grouping intervals.
   const allowedGroups = ["day", "week", "month"];
 
   if (!allowedGroups.includes(groupBy)) {
@@ -905,6 +968,7 @@ export const getSalesAnalytics = async ({
       SELECT
         o.id,
         'Online'::text AS sale_type,
+        COALESCE(o.payment_method, 'online_transfer') AS payment_method,
         o.date AS sale_date,
         o.amount AS total_amount,
 
@@ -944,20 +1008,27 @@ export const getSalesAnalytics = async ({
         END AS profit_available
 
       FROM orders o
-
       WHERE o.status IN (
-        'Processing',
+        'Approved',
         'Out for Delivery',
         'Delivered'
       )
-      AND o.date >= $1::date
-      AND o.date < ($2::date + INTERVAL '1 day')
+      AND o.date >= (
+        ($1::date::timestamp AT TIME ZONE 'Africa/Addis_Ababa')
+        AT TIME ZONE 'UTC'
+      )
+      AND o.date < (
+        (($2::date + INTERVAL '1 day')
+          AT TIME ZONE 'Africa/Addis_Ababa')
+        AT TIME ZONE 'UTC'
+      )
     ),
 
     pos_sales AS (
       SELECT
         ps.id,
         'POS'::text AS sale_type,
+        ps.payment_method,
         ps.date AS sale_date,
         ps.total_amount,
 
@@ -969,25 +1040,40 @@ export const getSalesAnalytics = async ({
         TRUE AS profit_available
 
       FROM pos_sales ps
-
       INNER JOIN pos_sale_items psi
         ON psi.sale_id = ps.id
 
-      WHERE ps.date >= $1::date
-        AND ps.date < ($2::date + INTERVAL '1 day')
+      WHERE ps.date >= (
+        ($1::date::timestamp AT TIME ZONE 'Africa/Addis_Ababa')
+        AT TIME ZONE 'UTC'
+      )
+      AND ps.date < (
+        (($2::date + INTERVAL '1 day')
+          AT TIME ZONE 'Africa/Addis_Ababa')
+        AT TIME ZONE 'UTC'
+      )
 
       GROUP BY
         ps.id,
+        ps.payment_method,
         ps.date,
         ps.total_amount
     ),
 
     all_sales AS (
       SELECT * FROM online_sales
-
       UNION ALL
-
       SELECT * FROM pos_sales
+    ),
+
+    local_sales AS (
+      SELECT
+        *,
+        (
+          (sale_date AT TIME ZONE 'UTC')
+          AT TIME ZONE 'Africa/Addis_Ababa'
+        ) AS local_sale_date
+      FROM all_sales
     ),
 
     date_series AS (
@@ -1004,10 +1090,9 @@ export const getSalesAnalytics = async ({
 
     period_sales AS (
       SELECT
-        DATE_TRUNC($3, sale_date) AS period,
+        DATE_TRUNC($3, local_sale_date) AS period,
 
         SUM(total_amount) AS revenue,
-
         SUM(profit) AS profit,
 
         SUM(
@@ -1038,37 +1123,25 @@ export const getSalesAnalytics = async ({
           WHERE profit_available = FALSE
         ) AS profit_unavailable_count
 
-      FROM all_sales
-
-      GROUP BY DATE_TRUNC($3, sale_date)
+      FROM local_sales
+      GROUP BY DATE_TRUNC($3, local_sale_date)
     ),
 
     chart_data AS (
       SELECT
         ds.period,
-
         COALESCE(ps.revenue, 0) AS revenue,
-
         ps.profit,
-
         COALESCE(ps.online_revenue, 0) AS online_revenue,
-
         COALESCE(ps.pos_revenue, 0) AS pos_revenue,
-
         COALESCE(ps.sales_count, 0) AS sales_count,
-
         COALESCE(ps.online_sales_count, 0) AS online_sales_count,
-
         COALESCE(ps.pos_sales_count, 0) AS pos_sales_count,
-
         COALESCE(ps.profit_available_count, 0)
           AS profit_available_count,
-
         COALESCE(ps.profit_unavailable_count, 0)
           AS profit_unavailable_count
-
       FROM date_series ds
-
       LEFT JOIN period_sales ps
         ON ps.period = ds.period
     ),
@@ -1076,9 +1149,7 @@ export const getSalesAnalytics = async ({
     summary AS (
       SELECT
         COALESCE(SUM(total_amount), 0) AS total_revenue,
-
         SUM(profit) AS total_profit,
-
         COUNT(*) AS total_sales_count,
 
         COUNT(*) FILTER (
@@ -1107,14 +1178,45 @@ export const getSalesAnalytics = async ({
 
         COUNT(*) FILTER (
           WHERE profit_available = FALSE
-        ) AS profit_unavailable_count
+        ) AS profit_unavailable_count,
 
-      FROM all_sales
+        COALESCE(
+          SUM(total_amount) FILTER (
+            WHERE payment_method = 'cash'
+          ), 0
+        ) AS cash_revenue,
+
+        COUNT(*) FILTER (
+          WHERE payment_method = 'cash'
+        ) AS cash_sales_count,
+
+        COALESCE(
+          SUM(total_amount) FILTER (
+            WHERE payment_method = 'online_transfer'
+          ), 0
+        ) AS online_transfer_revenue,
+
+        COUNT(*) FILTER (
+          WHERE payment_method = 'online_transfer'
+        ) AS online_transfer_sales_count,
+
+        COALESCE(
+          SUM(total_amount) FILTER (
+            WHERE payment_method IS NULL
+               OR payment_method NOT IN ('cash', 'online_transfer')
+          ), 0
+        ) AS unknown_payment_revenue,
+
+        COUNT(*) FILTER (
+          WHERE payment_method IS NULL
+             OR payment_method NOT IN ('cash', 'online_transfer')
+        ) AS unknown_payment_sales_count
+
+      FROM local_sales
     )
 
     SELECT
       cd.*,
-
       s.total_revenue,
       s.total_profit,
       s.total_sales_count,
@@ -1123,12 +1225,17 @@ export const getSalesAnalytics = async ({
       s.online_revenue AS summary_online_revenue,
       s.pos_revenue AS summary_pos_revenue,
       s.profit_available_count AS summary_profit_available_count,
-      s.profit_unavailable_count AS summary_profit_unavailable_count
+      s.profit_unavailable_count AS summary_profit_unavailable_count,
+
+      s.cash_revenue,
+      s.cash_sales_count,
+      s.online_transfer_revenue,
+      s.online_transfer_sales_count,
+      s.unknown_payment_revenue,
+      s.unknown_payment_sales_count
 
     FROM chart_data cd
-
     CROSS JOIN summary s
-
     ORDER BY cd.period ASC
     `,
     [startDate, endDate, groupBy]
@@ -1137,8 +1244,7 @@ export const getSalesAnalytics = async ({
   const chart = rows.map((row) => ({
     period: row.period,
     revenue: Number(row.revenue),
-    profit:
-      row.profit == null ? null : Number(row.profit),
+    profit: row.profit == null ? null : Number(row.profit),
 
     onlineRevenue: Number(row.online_revenue),
     posRevenue: Number(row.pos_revenue),
@@ -1157,27 +1263,51 @@ export const getSalesAnalytics = async ({
     chart,
 
     summary: {
-      totalRevenue: Number(firstRow.total_revenue),
+      totalRevenue: Number(firstRow?.total_revenue ?? 0),
 
       totalProfit:
-        firstRow.total_profit == null
+        firstRow?.total_profit == null
           ? null
           : Number(firstRow.total_profit),
 
-      totalSalesCount: Number(firstRow.total_sales_count),
+      totalSalesCount: Number(firstRow?.total_sales_count ?? 0),
 
-      onlineRevenue: Number(firstRow.summary_online_revenue),
-      posRevenue: Number(firstRow.summary_pos_revenue),
+      onlineRevenue: Number(firstRow?.summary_online_revenue ?? 0),
+      posRevenue: Number(firstRow?.summary_pos_revenue ?? 0),
 
-      onlineSalesCount: Number(firstRow.summary_online_sales_count),
-      posSalesCount: Number(firstRow.summary_pos_sales_count),
+      onlineSalesCount: Number(
+        firstRow?.summary_online_sales_count ?? 0
+      ),
+
+      posSalesCount: Number(
+        firstRow?.summary_pos_sales_count ?? 0
+      ),
 
       profitAvailableCount: Number(
-        firstRow.summary_profit_available_count
+        firstRow?.summary_profit_available_count ?? 0
       ),
 
       profitUnavailableCount: Number(
-        firstRow.summary_profit_unavailable_count
+        firstRow?.summary_profit_unavailable_count ?? 0
+      ),
+
+      cashRevenue: Number(firstRow?.cash_revenue ?? 0),
+      cashSalesCount: Number(firstRow?.cash_sales_count ?? 0),
+
+      onlineTransferRevenue: Number(
+        firstRow?.online_transfer_revenue ?? 0
+      ),
+
+      onlineTransferSalesCount: Number(
+        firstRow?.online_transfer_sales_count ?? 0
+      ),
+
+      unknownPaymentRevenue: Number(
+        firstRow?.unknown_payment_revenue ?? 0
+      ),
+
+      unknownPaymentSalesCount: Number(
+        firstRow?.unknown_payment_sales_count ?? 0
       ),
     },
 
@@ -1188,6 +1318,3 @@ export const getSalesAnalytics = async ({
     },
   };
 };
-
-
-

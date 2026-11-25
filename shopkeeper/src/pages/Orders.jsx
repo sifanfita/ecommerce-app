@@ -10,7 +10,7 @@ import "react-datepicker/dist/react-datepicker.css";
 
 const ORDER_STATUSES = [
   "Order placed",
-  "Processing",
+  "Approved",
   "Out for Delivery",
   "Delivered",
   "Cancelled",

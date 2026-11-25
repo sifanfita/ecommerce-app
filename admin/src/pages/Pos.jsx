@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import axios from "axios";
 import { backendUrl, currency } from "../App";
@@ -16,6 +15,7 @@ const POS = ({ token }) => {
   const [unitSellingPrice, setUnitSellingPrice] = useState("");
 
   const [cart, setCart] = useState([]);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
   const [completingSale, setCompletingSale] = useState(false);
   const [receipt, setReceipt] = useState(null);
 
@@ -301,7 +301,7 @@ const POS = ({ token }) => {
 
       const response = await axios.post(
         `${backendUrl}/api/order/pos`,
-        { items },
+        { items, paymentMethod },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -312,6 +312,7 @@ const POS = ({ token }) => {
       if (response.data.success) {
         setReceipt(response.data.sale);
         setCart([]);
+        setPaymentMethod("cash");
         setProducts([]);
         setSelectedProduct(null);
         setSearchQuery("");
@@ -342,6 +343,7 @@ const POS = ({ token }) => {
   const startNewSale = () => {
     setReceipt(null);
     setCart([]);
+    setPaymentMethod("cash");
     setProducts([]);
     setSearchQuery("");
     setSelectedProduct(null);
@@ -380,6 +382,17 @@ const POS = ({ token }) => {
               <span>
                 {receipt.date
                   ? new Date(receipt.date).toLocaleString()
+                  : "-"}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span className="text-gray-500">Payment Method</span>
+              <span className="font-medium">
+                {receipt.payment_method === "online_transfer"
+                  ? "Online Transfer"
+                  : receipt.payment_method === "cash"
+                  ? "Cash"
                   : "-"}
               </span>
             </div>
@@ -759,6 +772,23 @@ const POS = ({ token }) => {
                   ))}
                 </div>
               )}
+
+              {/* PAYMENT METHOD */}
+              <div className="border-t mt-5 pt-4">
+                <label className="block text-sm font-medium mb-2">
+                  Payment Method
+                </label>
+
+                <select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  disabled={cart.length === 0 || completingSale}
+                  className="w-full border px-3 py-2 rounded bg-white disabled:bg-gray-100"
+                >
+                  <option value="cash">Cash</option>
+                  <option value="online_transfer">Online Transfer</option>
+                </select>
+              </div>
 
               {/* TOTALS */}
               <div className="border-t mt-5 pt-4 space-y-3">

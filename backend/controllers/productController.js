@@ -1,6 +1,7 @@
 
 import { v2 as cloudinary } from "cloudinary";
 import { randomUUID } from "crypto";
+import { getBrandById } from "../models/brandModel.js";
 
 import {
   createProduct,
@@ -39,6 +40,7 @@ const addProduct = async (req, res) => {
       category,
       bestSeller,
       colors,
+      brandId,
     } = req.body;
 
     if (!name || !description || !category) {
@@ -47,6 +49,23 @@ const addProduct = async (req, res) => {
         message: "Name, description, and category are required",
       });
     }
+    const selectedBrandId = Number(brandId);
+
+if (!Number.isInteger(selectedBrandId) || selectedBrandId <= 0) {
+  return res.status(400).json({
+    success: false,
+    message: "Please select a valid brand",
+  });
+}
+
+const selectedBrand = await getBrandById(selectedBrandId);
+
+if (!selectedBrand || !selectedBrand.is_active) {
+  return res.status(400).json({
+    success: false,
+    message: "Selected brand does not exist or is inactive",
+  });
+}
 
     const sellingPrice = Number(price);
     const productCost = Number(costPrice);
@@ -148,6 +167,7 @@ const addProduct = async (req, res) => {
       price: sellingPrice,
       cost_price: productCost,
       category,
+      brand_id: selectedBrandId,
       colors: colorsWithSKUs,
       bestSeller: bestSeller === "true" || bestSeller === true,
       image: imageUrls,

@@ -5,22 +5,39 @@ import { backendUrl, currency } from "../App";
 
 const TIME_ZONE = "Africa/Addis_Ababa";
 
-const getLocalDateString = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+// Get today's date using Addis Ababa timezone
+const getTodayDateString = () => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
 
-  return `${year}-${month}-${day}`;
+  const values = Object.fromEntries(
+    parts.map(({ type, value }) => [type, value])
+  );
+
+  return `${values.year}-${values.month}-${values.day}`;
 };
 
+// Add or subtract days without browser timezone differences
+const addDaysToDateString = (dateString, days) => {
+  const [year, month, day] = dateString.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  date.setUTCDate(date.getUTCDate() + days);
+
+  return date.toISOString().slice(0, 10);
+};
+
+// Default reporting period: last 30 days
 const getDefaultDates = () => {
-  const today = new Date();
-  const start = new Date(today);
-  start.setDate(today.getDate() - 29);
+  const today = getTodayDateString();
 
   return {
-    startDate: getLocalDateString(start),
-    endDate: getLocalDateString(today),
+    startDate: addDaysToDateString(today, -29),
+    endDate: today,
   };
 };
 
@@ -73,7 +90,9 @@ const SummaryCard = ({ title, value, description, icon, iconBg }) => (
         </h2>
       </div>
 
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${iconBg}`}>
+      <div
+        className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${iconBg}`}
+      >
         {icon}
       </div>
     </div>
@@ -197,7 +216,9 @@ const SalesChart = ({ data, groupBy }) => {
                     fill="#9ca3af"
                   >
                     {value >= 1000
-                      ? `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}k`
+                      ? `${(value / 1000).toFixed(
+                          value % 1000 === 0 ? 0 : 1
+                        )}k`
                       : value}
                   </text>
                 </g>
@@ -424,6 +445,7 @@ const Home = ({ token }) => {
 
   useEffect(() => {
     fetchAnalytics();
+
     // Fetch again whenever the selected date range or grouping changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -446,17 +468,26 @@ const Home = ({ token }) => {
     }));
   };
 
+  // Quick reporting period
   const setQuickRange = (days) => {
-    const end = new Date();
-    const start = new Date(end);
-
-    start.setDate(end.getDate() - (days - 1));
+    const today = getTodayDateString();
 
     setFilters((previous) => ({
       ...previous,
-      startDate: getLocalDateString(start),
-      endDate: getLocalDateString(end),
+      startDate: addDaysToDateString(today, -(days - 1)),
+      endDate: today,
     }));
+  };
+
+  // Check which quick filter is currently selected
+  const isQuickRangeSelected = (days) => {
+    const today = getTodayDateString();
+    const expectedStart = addDaysToDateString(today, -(days - 1));
+
+    return (
+      filters.startDate === expectedStart &&
+      filters.endDate === today
+    );
   };
 
   const profitCoverage = useMemo(() => {
@@ -505,18 +536,27 @@ const Home = ({ token }) => {
 
             <div className="flex flex-wrap gap-2">
               {[
+                { label: "Today", days: 1 },
                 { label: "Last 7 days", days: 7 },
                 { label: "Last 30 days", days: 30 },
                 { label: "Last 90 days", days: 90 },
-              ].map((option) => (
-                <button
-                  key={option.days}
-                  onClick={() => setQuickRange(option.days)}
-                  className="px-3 py-2 rounded-lg text-sm border border-gray-200 text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
-                >
-                  {option.label}
-                </button>
-              ))}
+              ].map((option) => {
+                const selected = isQuickRangeSelected(option.days);
+
+                return (
+                  <button
+                    key={option.days}
+                    onClick={() => setQuickRange(option.days)}
+                    className={`px-3 py-2 rounded-lg text-sm border transition-colors ${
+                      selected
+                        ? "bg-blue-50 text-blue-600 border-blue-200 font-semibold"
+                        : "border-gray-200 text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -544,7 +584,7 @@ const Home = ({ token }) => {
                 type="date"
                 value={filters.endDate}
                 min={filters.startDate}
-                max={getLocalDateString(new Date())}
+                max={getTodayDateString()}
                 onChange={(e) =>
                   updateFilter("endDate", e.target.value)
                 }
@@ -625,7 +665,11 @@ const Home = ({ token }) => {
 
             <SummaryCard
               title="Profit Available"
-              value={`${Number(summary.profitAvailableCount || 0).toLocaleString()} / ${Number(summary.totalSalesCount || 0).toLocaleString()}`}
+              value={`${Number(
+                summary.profitAvailableCount || 0
+              ).toLocaleString()} / ${Number(
+                summary.totalSalesCount || 0
+              ).toLocaleString()}`}
               description="Transactions with historical cost data"
               icon="📊"
               iconBg="bg-orange-50"
@@ -693,7 +737,9 @@ const Home = ({ token }) => {
                 </div>
 
                 <h2 className="text-2xl font-bold text-blue-800 mt-3">
-                  {Number(summary.onlineSalesCount || 0).toLocaleString()}
+                  {Number(
+                    summary.onlineSalesCount || 0
+                  ).toLocaleString()}
                 </h2>
 
                 <p className="text-sm text-blue-600 mt-1">
@@ -710,7 +756,9 @@ const Home = ({ token }) => {
                 </div>
 
                 <h2 className="text-2xl font-bold text-emerald-800 mt-3">
-                  {Number(summary.posSalesCount || 0).toLocaleString()}
+                  {Number(
+                    summary.posSalesCount || 0
+                  ).toLocaleString()}
                 </h2>
 
                 <p className="text-sm text-emerald-600 mt-1">
@@ -732,6 +780,73 @@ const Home = ({ token }) => {
               </div>
             )}
           </div>
+
+{/* Payment Method Overview */}
+<div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mt-6">
+  <h3 className="text-lg font-semibold text-gray-800">
+    Payment Method Overview
+  </h3>
+
+  <p className="text-sm text-gray-400 mt-1 mb-5">
+    Revenue collected through each payment method for the selected period.
+  </p>
+
+  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div className="rounded-lg bg-emerald-50 p-4">
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-medium text-emerald-700">
+          Cash
+        </span>
+        <span className="text-xl">💵</span>
+      </div>
+
+      <h2 className="text-2xl font-bold text-emerald-800 mt-3">
+        {formatMoney(summary.cashRevenue)}
+      </h2>
+
+      <p className="text-sm text-emerald-600 mt-1">
+        {Number(summary.cashSalesCount || 0)} transactions
+      </p>
+    </div>
+
+    <div className="rounded-lg bg-blue-50 p-4">
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-medium text-blue-700">
+          Online Transfer
+        </span>
+        <span className="text-xl">🏦</span>
+      </div>
+
+      <h2 className="text-2xl font-bold text-blue-800 mt-3">
+        {formatMoney(summary.onlineTransferRevenue)}
+      </h2>
+
+      <p className="text-sm text-blue-600 mt-1">
+        {Number(summary.onlineTransferSalesCount || 0)} transactions
+      </p>
+    </div>
+
+    {Number(summary.unknownPaymentSalesCount || 0) > 0 && (
+      <div className="rounded-lg bg-gray-100 p-4">
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-medium text-gray-700">
+            Unknown
+          </span>
+          <span className="text-xl">❔</span>
+        </div>
+
+        <h2 className="text-2xl font-bold text-gray-800 mt-3">
+          {formatMoney(summary.unknownPaymentRevenue)}
+        </h2>
+
+        <p className="text-sm text-gray-600 mt-1">
+          {Number(summary.unknownPaymentSalesCount || 0)} transactions
+        </p>
+      </div>
+    )}
+  </div>
+</div>
+
         </>
       )}
     </div>

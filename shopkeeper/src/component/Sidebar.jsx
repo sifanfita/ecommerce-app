@@ -1,10 +1,13 @@
+
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { assets } from "../assets/assets";
 
 const Sidebar = () => {
-  const linkClass =
-    "flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l";
+  const linkClass = ({ isActive }) =>
+    `flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l ${
+      isActive ? "bg-gray-100 border-gray-500" : ""
+    }`;
 
   return (
     <div className="w-[18%] min-h-screen border-r-2">
@@ -17,6 +20,25 @@ const Sidebar = () => {
         <NavLink className={linkClass} to="/list">
           <img className="w-5 h-5" src={assets.order_icon} alt="" />
           <p className="hidden md:block">List Items</p>
+        </NavLink>
+
+        <NavLink className={linkClass} to="/brands">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 2 3 7l9 5 9-5-9-5Z" />
+            <path d="m3 12 9 5 9-5" />
+            <path d="m3 17 9 5 9-5" />
+          </svg>
+          <p className="hidden md:block">Brands</p>
         </NavLink>
 
         <NavLink className={linkClass} to="/orders">
@@ -42,23 +64,8 @@ const Sidebar = () => {
           </svg>
           <p className="hidden md:block">POS</p>
         </NavLink>
-        <NavLink className={linkClass} to="/sales-history">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 3v18h18" />
-            <path d="m19 9-5 5-4-4-5 5" />
-          </svg>
-          <p className="hidden md:block">Sales History</p>
-        </NavLink>
+
+        
 
         <NavLink className={linkClass} to="/customers">
           <img className="w-5 h-5" src={assets.customers_icon} alt="" />
@@ -72,4 +79,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-

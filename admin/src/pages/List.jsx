@@ -321,6 +321,42 @@ const List = ({ token }) => {
         size: 180,
       },
       {
+        accessorKey: "brand_name",
+        header: "Brand",
+        Cell: ({ row }) => {
+          const brandName = row.original.brand_name;
+          const brandCode = row.original.brand_code;
+
+          if (!brandName) {
+            return (
+              <Chip
+                label="No Brand"
+                size="small"
+                variant="outlined"
+                color="default"
+              />
+            );
+          }
+
+          return (
+            <Stack spacing={0.5} alignItems="flex-start">
+              <Typography fontWeight="medium">
+                {brandName}
+              </Typography>
+              {brandCode && (
+                <Chip
+                  label={brandCode}
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                />
+              )}
+            </Stack>
+          );
+        },
+        size: 150,
+      },
+      {
         accessorKey: "category",
         header: "Category",
         size: 120,
@@ -415,7 +451,11 @@ const List = ({ token }) => {
           <Typography color="text.secondary">
             In Stock
           </Typography>
-          <Typography variant="h5" fontWeight="bold" color="success.main">
+          <Typography
+            variant="h5"
+            fontWeight="bold"
+            color="success.main"
+          >
             {inventorySummary.inStock}
           </Typography>
         </Box>
@@ -424,7 +464,11 @@ const List = ({ token }) => {
           <Typography color="text.secondary">
             Low Stock
           </Typography>
-          <Typography variant="h5" fontWeight="bold" color="warning.main">
+          <Typography
+            variant="h5"
+            fontWeight="bold"
+            color="warning.main"
+          >
             {inventorySummary.lowStock}
           </Typography>
         </Box>
@@ -433,7 +477,11 @@ const List = ({ token }) => {
           <Typography color="text.secondary">
             Out of Stock
           </Typography>
-          <Typography variant="h5" fontWeight="bold" color="error.main">
+          <Typography
+            variant="h5"
+            fontWeight="bold"
+            color="error.main"
+          >
             {inventorySummary.outOfStock}
           </Typography>
         </Box>

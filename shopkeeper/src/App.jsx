@@ -12,7 +12,8 @@ import Home from "./component/Home";
 import Customers from "./pages/Customers";
 
 import Pos from "./pages/Pos";
-import SalesHistory from "./pages/SalesHistory";
+
+import Brands from "./pages/Brand";
 
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
 export const currency = "ETB";
@@ -52,10 +53,8 @@ const App = () => {
                 
 
                 <Route path="/pos" element={<Pos token={token} />} />
-                <Route
-                  path="/sales-history"
-                  element={<SalesHistory token={token} />}
-                />
+                
+                <Route path="/brands" element={<Brands token={token} />} />
               </Routes>
             </div>
           </div>

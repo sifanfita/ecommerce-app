@@ -6,13 +6,10 @@ import {
   createPOSSale,
   getSalesHistory,
   getSalesAnalytics,
-
-
 } from "../models/orderModel.js";
-import { updateUserCart, findUserById } from "../models/userModel.js";
-import { getProductById, updateProductColors } from "../models/productModel.js";
-import { v2 as cloudinary } from "cloudinary";
 
+import { updateUserCart } from "../models/userModel.js";
+import { v2 as cloudinary } from "cloudinary";
 
 // =======================
 // ADMIN – GET ALL ORDERS
@@ -27,13 +24,13 @@ const allOrders = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+
     res.json({
       success: false,
       message: "Error fetching all orders",
     });
   }
 };
-
 
 // =======================
 // USER – GET THEIR ORDERS
@@ -50,13 +47,13 @@ const userOrders = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+
     res.json({
       success: false,
       message: "Error fetching user orders",
     });
   }
 };
-
 
 // =======================
 // ADMIN – UPDATE STATUS
@@ -95,7 +92,6 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-
 // =======================
 // USER – PLACE ORDER
 // =======================
@@ -132,7 +128,11 @@ const placeOrder = async (req, res) => {
       });
     }
 
-    if (!address || typeof address !== "object" || Array.isArray(address)) {
+    if (
+      !address ||
+      typeof address !== "object" ||
+      Array.isArray(address)
+    ) {
       return res.status(400).json({
         success: false,
         message: "Invalid delivery information",
@@ -155,8 +155,8 @@ const placeOrder = async (req, res) => {
       }
     );
 
-    // Backend calculates the total and deducts stock
-    // inside one PostgreSQL transaction.
+    // Online orders are automatically classified as online_transfer
+    // inside createOrderWithStock in orderModel.js.
     const newOrder = await createOrderWithStock({
       userId,
       items,
@@ -195,6 +195,7 @@ const placeOrder = async (req, res) => {
     });
   }
 };
+
 // =======================
 // POS – COMPLETE IN-PERSON SALE
 // =======================
@@ -203,6 +204,11 @@ const completePOSSale = async (req, res) => {
     const sellerId = Number(req.user._id);
 
     let items = req.body.items;
+
+    const paymentMethod =
+      typeof req.body.paymentMethod === "string"
+        ? req.body.paymentMethod.trim().toLowerCase()
+        : "";
 
     if (typeof items === "string") {
       items = JSON.parse(items);
@@ -215,9 +221,17 @@ const completePOSSale = async (req, res) => {
       });
     }
 
+    if (!["cash", "online_transfer"].includes(paymentMethod)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select Cash or Online Transfer as the payment method",
+      });
+    }
+
     const sale = await createPOSSale({
       sellerId,
       items,
+      paymentMethod,
     });
 
     return res.status(201).json({
@@ -235,7 +249,9 @@ const completePOSSale = async (req, res) => {
   }
 };
 
-
+// =======================
+// SALES HISTORY
+// =======================
 const salesHistory = async (req, res) => {
   try {
     const {
@@ -373,8 +389,6 @@ const salesAnalytics = async (req, res) => {
     });
   }
 };
-
-
 
 export {
   allOrders,

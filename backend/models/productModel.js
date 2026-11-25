@@ -18,6 +18,7 @@ const mapRow = (row) => {
   return {
     ...row,
     _id: String(row.id),
+    brand_id: row.brand_id == null ? null : Number(row.brand_id),
     price: Number(row.price),
     cost_price: Number(row.cost_price ?? 0),
     image: safeParse(row.image, []),
@@ -38,12 +39,23 @@ export const createProduct = async (data) => {
     category,
     colors,
     bestSeller,
+    brand_id,
   } = data;
 
   const { rows } = await pool.query(
     `INSERT INTO products
-      (name, description, price, cost_price, image, category, colors, best_seller)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      (
+        name,
+        description,
+        price,
+        cost_price,
+        image,
+        category,
+        colors,
+        best_seller,
+        brand_id
+      )
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
      RETURNING *`,
     [
       name,
@@ -54,6 +66,7 @@ export const createProduct = async (data) => {
       category,
       JSON.stringify(colors ?? []),
       Boolean(bestSeller),
+      brand_id,
     ]
   );
 
@@ -65,7 +78,13 @@ export const getAllProducts = async () => {
   const pool = await getPool();
 
   const { rows } = await pool.query(
-    "SELECT * FROM products ORDER BY date DESC"
+    `SELECT
+       p.*,
+       b.name AS brand_name,
+       b.brand_code AS brand_code
+     FROM products p
+     LEFT JOIN brands b ON b.id = p.brand_id
+     ORDER BY p.date DESC`
   );
 
   return rows.map(mapRow);
@@ -76,7 +95,13 @@ export const getProductById = async (id) => {
   const pool = await getPool();
 
   const { rows } = await pool.query(
-    "SELECT * FROM products WHERE id = $1",
+    `SELECT
+       p.*,
+       b.name AS brand_name,
+       b.brand_code AS brand_code
+     FROM products p
+     LEFT JOIN brands b ON b.id = p.brand_id
+     WHERE p.id = $1`,
     [id]
   );
 
@@ -97,7 +122,6 @@ export const updateProductColors = async (id, colors) => {
 
   return mapRow(rows[0]);
 };
-
 
 const normalizeVariant = (value) =>
   String(value ?? "").trim().toLowerCase();
@@ -120,8 +144,7 @@ export const restockProduct = async ({
     await client.query("BEGIN");
     transactionStarted = true;
 
-    // Lock the product so another stock or price update
-    // cannot interfere with this restock transaction.
+    // Lock product to prevent conflicting stock/cost updates.
     const { rows } = await client.query(
       `SELECT * FROM products WHERE id = $1 FOR UPDATE`,
       [productId]
@@ -158,7 +181,7 @@ export const restockProduct = async ({
       throw new Error("Selected size was not found");
     }
 
-    // Calculate total remaining stock across every variant.
+    // Calculate total stock across all variants.
     let oldTotalStock = 0;
 
     for (const colorItem of colors) {
@@ -186,7 +209,6 @@ export const restockProduct = async ({
     );
 
     const purchaseCostCents = Math.round(purchaseCost * 100);
-
     const newTotalStock = oldTotalStock + quantity;
 
     const newAverageCostCents =
@@ -201,10 +223,10 @@ export const restockProduct = async ({
 
     const newAverageCost = newAverageCostCents / 100;
 
-    // Add stock only to the selected variant.
+    // Increase stock only for the selected variant.
     sizeEntry.stock = newVariantStock;
 
-    // Keep the current selling price unless a new one was provided.
+    // Keep existing selling price unless a new one is provided.
     const updatedSellingPrice =
       sellingPrice === undefined || sellingPrice === null
         ? Number(product.price)

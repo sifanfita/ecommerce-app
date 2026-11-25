@@ -29,14 +29,14 @@ orderRouter.post(
 orderRouter.get(
   "/sales-history",
   authMiddleware,
-  adminOrShopkeeper,
+  adminOnly,
   salesHistory
 );
 
 orderRouter.get(
   "/sales-analytics",
   authMiddleware,
-  adminOrShopkeeper,
+  adminOnly,
   salesAnalytics
 );
 

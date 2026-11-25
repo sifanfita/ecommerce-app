@@ -19,6 +19,13 @@ const formatDate = (date) => {
   return parsedDate.toLocaleString();
 };
 
+const formatPaymentMethod = (method) => {
+  if (method === "cash") return "Cash";
+  if (method === "online_transfer") return "Online Transfer";
+  return "Unknown";
+};
+
+
 const SalesHistory = ({ token }) => {
   const [sales, setSales] = useState([]);
   const [summary, setSummary] = useState({
@@ -156,6 +163,23 @@ const SalesHistory = ({ token }) => {
       value: summary.posSalesCount || 0,
       description: "In-person transactions",
     },
+
+{
+  title: "Cash Payments",
+  value: formatMoney(summary.cashRevenue),
+  description: `${summary.cashSalesCount || 0} transactions`,
+},
+{
+  title: "Online Transfer Payments",
+  value: formatMoney(summary.onlineTransferRevenue),
+  description: `${summary.onlineTransferSalesCount || 0} transactions`,
+},
+{
+  title: "Unknown Payments",
+  value: formatMoney(summary.unknownPaymentRevenue),
+  description: `${summary.unknownPaymentSalesCount || 0} transactions`,
+},
+
   ];
 
   return (
@@ -336,7 +360,9 @@ const SalesHistory = ({ token }) => {
                   <th className="px-5 py-4">Customer / Seller</th>
                   <th className="px-5 py-4">Amount</th>
                   <th className="px-5 py-4">Profit</th>
+                  <th className="px-5 py-4">Payment Method</th>
                   <th className="px-5 py-4">Details</th>
+                  
                 </tr>
               </thead>
 
@@ -367,6 +393,7 @@ const SalesHistory = ({ token }) => {
                             {sale.sale_type}
                           </span>
                         </td>
+                        
 
                         <td className="px-5 py-4 text-gray-600">
                           {sale.sale_type === "POS"
@@ -389,6 +416,19 @@ const SalesHistory = ({ token }) => {
                             </span>
                           )}
                         </td>
+                        <td className="px-5 py-4">
+  <span
+    className={`px-3 py-1 rounded-full text-xs font-medium ${
+      sale.payment_method === "cash"
+        ? "bg-emerald-100 text-emerald-700"
+        : sale.payment_method === "online_transfer"
+        ? "bg-blue-100 text-blue-700"
+        : "bg-gray-100 text-gray-600"
+    }`}
+  >
+    {formatPaymentMethod(sale.payment_method)}
+  </span>
+</td>
 
                         <td className="px-5 py-4">
                           <button
@@ -403,7 +443,7 @@ const SalesHistory = ({ token }) => {
                       {/* Expanded Transaction Details */}
                       {isExpanded && (
                         <tr className="bg-gray-50">
-                          <td colSpan="7" className="px-5 py-5">
+                          <td colSpan="8" className="px-5 py-5">
                             <h3 className="font-semibold text-gray-800 mb-3">
                               Transaction #{sale.id} - Products
                             </h3>
