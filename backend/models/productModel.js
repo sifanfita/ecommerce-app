@@ -40,6 +40,7 @@ export const createProduct = async (data) => {
     colors,
     bestSeller,
     brand_id,
+    product_tag,
   } = data;
 
   const { rows } = await pool.query(
@@ -53,9 +54,10 @@ export const createProduct = async (data) => {
         category,
         colors,
         best_seller,
-        brand_id
+        brand_id,
+        product_tag
       )
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
      RETURNING *`,
     [
       name,
@@ -67,6 +69,7 @@ export const createProduct = async (data) => {
       JSON.stringify(colors ?? []),
       Boolean(bestSeller),
       brand_id,
+      product_tag,
     ]
   );
 
@@ -121,6 +124,26 @@ export const updateProductColors = async (id, colors) => {
   );
 
   return mapRow(rows[0]);
+};
+
+// GENERATE NEXT PRODUCT TAG SEQUENCE
+export const getNextProductTag = async (brandCode, categoryCode) => {
+  const pool = await getPool();
+
+  const { rows } = await pool.query(
+    `INSERT INTO product_tag_sequences
+       (brand_code, category_code, last_number)
+     VALUES ($1, $2, 1)
+     ON CONFLICT (brand_code, category_code)
+     DO UPDATE SET
+       last_number = product_tag_sequences.last_number + 1
+     RETURNING last_number`,
+    [brandCode, categoryCode]
+  );
+
+  const sequence = String(rows[0].last_number).padStart(3, "0");
+
+  return `${brandCode}-${categoryCode}-${sequence}`;
 };
 
 const normalizeVariant = (value) =>

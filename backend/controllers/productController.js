@@ -9,6 +9,7 @@ import {
   getProductById,
   updateProductColors,
   restockProduct,
+  getNextProductTag,
 } from "../models/productModel.js";
 
 // Generate a unique SKU
@@ -25,6 +26,27 @@ const assignVariantSKUs = (colors) => {
       sku: sizeEntry.sku || generateSKU(),
     })),
   }));
+};
+
+// Convert category names into short product tag codes
+const getCategoryCode = (category) => {
+  const categoryCodes = {
+    "t-shirt": "T",
+    "shirt": "SH",
+    "jacket": "J",
+    "shoes": "SHO",
+    "tuta": "TU",
+    "trouser": "TR",
+  };
+
+  const normalized = String(category ?? "")
+    .trim()
+    .toLowerCase();
+
+  return (
+    categoryCodes[normalized] ||
+    normalized.replace(/[^a-z0-9]/g, "").slice(0, 3).toUpperCase()
+  );
 };
 
 // =======================
@@ -49,23 +71,24 @@ const addProduct = async (req, res) => {
         message: "Name, description, and category are required",
       });
     }
+
     const selectedBrandId = Number(brandId);
 
-if (!Number.isInteger(selectedBrandId) || selectedBrandId <= 0) {
-  return res.status(400).json({
-    success: false,
-    message: "Please select a valid brand",
-  });
-}
+    if (!Number.isInteger(selectedBrandId) || selectedBrandId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid brand",
+      });
+    }
 
-const selectedBrand = await getBrandById(selectedBrandId);
+    const selectedBrand = await getBrandById(selectedBrandId);
 
-if (!selectedBrand || !selectedBrand.is_active) {
-  return res.status(400).json({
-    success: false,
-    message: "Selected brand does not exist or is inactive",
-  });
-}
+    if (!selectedBrand || !selectedBrand.is_active) {
+      return res.status(400).json({
+        success: false,
+        message: "Selected brand does not exist or is inactive",
+      });
+    }
 
     const sellingPrice = Number(price);
     const productCost = Number(costPrice);
@@ -161,6 +184,34 @@ if (!selectedBrand || !selectedBrand.is_active) {
     // Generate a SKU for every color-size variant
     const colorsWithSKUs = assignVariantSKUs(parsedColors);
 
+    // Validate and normalize the selected brand code
+    const brandCode = String(selectedBrand.brand_code ?? "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+
+    if (!brandCode) {
+      return res.status(400).json({
+        success: false,
+        message: "The selected brand does not have a valid brand code",
+      });
+    }
+
+    // Generate one product tag for the selected brand and category
+    const categoryCode = getCategoryCode(category);
+
+    if (!categoryCode) {
+      return res.status(400).json({
+        success: false,
+        message: "The selected category does not have a valid code",
+      });
+    }
+
+    const productTag = await getNextProductTag(
+      brandCode,
+      categoryCode
+    );
+
     const productData = {
       name,
       description,
@@ -168,6 +219,7 @@ if (!selectedBrand || !selectedBrand.is_active) {
       cost_price: productCost,
       category,
       brand_id: selectedBrandId,
+      product_tag: productTag,
       colors: colorsWithSKUs,
       bestSeller: bestSeller === "true" || bestSeller === true,
       image: imageUrls,
@@ -189,7 +241,6 @@ if (!selectedBrand || !selectedBrand.is_active) {
     });
   }
 };
-
 
 // =======================
 // LIST PRODUCTS FOR INVENTORY
@@ -222,7 +273,7 @@ const searchProducts = async (req, res) => {
     if (!query) {
       return res.status(400).json({
         success: false,
-        message: "Please enter a product name or SKU",
+        message: "Please enter a product name, tag, or SKU",
       });
     }
 
@@ -236,6 +287,10 @@ const searchProducts = async (req, res) => {
           ?.toLowerCase()
           .includes(searchTerm);
 
+        const tagMatches = product.product_tag
+          ?.toLowerCase()
+          .includes(searchTerm);
+
         // Keep only variants with available stock
         const availableColors = (product.colors || [])
           .map((colorEntry) => {
@@ -243,13 +298,16 @@ const searchProducts = async (req, res) => {
               .filter((sizeEntry) => {
                 const hasStock = Number(sizeEntry.stock) > 0;
 
-                // If the product name matches, show all available variants.
-                // Otherwise, search by SKU.
+                // Search by product name, product tag, or variant SKU.
+                // A name or tag match returns all available variants.
                 const skuMatches = sizeEntry.sku
                   ?.toLowerCase()
                   .includes(searchTerm);
 
-                return hasStock && (nameMatches || skuMatches);
+                return (
+                  hasStock &&
+                  (nameMatches || tagMatches || skuMatches)
+                );
               })
               .map((sizeEntry) => ({
                 size: sizeEntry.size,
@@ -272,6 +330,7 @@ const searchProducts = async (req, res) => {
         return {
           _id: product._id,
           name: product.name,
+          product_tag: product.product_tag,
           description: product.description,
           image: product.image,
           category: product.category,
@@ -389,7 +448,6 @@ const updateStock = async (req, res) => {
   }
 };
 
-
 // =======================
 // RESTOCK PRODUCT
 // =======================
@@ -484,7 +542,6 @@ const restock = async (req, res) => {
   }
 };
 
-
 export {
   addProduct,
   listProducts,
@@ -492,5 +549,4 @@ export {
   updateStock,
   searchProducts,
   restock,
-
 };

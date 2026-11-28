@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import axios from "axios";
 import { backendUrl, currency } from "../App";
@@ -20,13 +21,13 @@ const POS = ({ token }) => {
   const [receipt, setReceipt] = useState(null);
 
   // =========================
-  // Search products by name or SKU
+  // Search products by name, product tag, or SKU
   // =========================
   const searchProducts = async (e) => {
     e?.preventDefault();
 
     if (!searchQuery.trim()) {
-      toast.error("Enter a product name or SKU");
+      toast.error("Enter a product name, product tag, or SKU");
       return;
     }
 
@@ -179,6 +180,7 @@ const POS = ({ token }) => {
     const newItem = {
       productId,
       productName: selectedProduct.name,
+      productTag: selectedProduct.product_tag || "",
       sku: currentSize?.sku || "",
       color: selectedColor,
       size: selectedSize,
@@ -467,7 +469,7 @@ const POS = ({ token }) => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by product name or SKU..."
+                  placeholder="Search by product name, tag, or SKU..."
                   className="flex-1 border px-3 py-3 rounded outline-none focus:border-black"
                 />
 
@@ -528,6 +530,12 @@ const POS = ({ token }) => {
                               {product.name}
                             </p>
 
+                            {product.product_tag && (
+                              <p className="text-xs font-semibold text-blue-700 mt-1">
+                                Tag: {product.product_tag}
+                              </p>
+                            )}
+
                             <p className="text-sm text-gray-500">
                               {product.category}
                             </p>
@@ -558,7 +566,14 @@ const POS = ({ token }) => {
 
                 <div className="mb-4">
                   <p className="font-medium">{selectedProduct.name}</p>
-                  <p className="text-sm text-gray-500">
+
+                  {selectedProduct.product_tag && (
+                    <p className="text-sm font-semibold text-blue-700 mt-1">
+                      Product Tag: {selectedProduct.product_tag}
+                    </p>
+                  )}
+
+                  <p className="text-sm text-gray-500 mt-1">
                     Default price: {currency}
                     {Number(selectedProduct.price).toLocaleString()}
                   </p>
@@ -721,6 +736,12 @@ const POS = ({ token }) => {
                           <p className="font-medium text-sm">
                             {item.productName}
                           </p>
+
+                          {item.productTag && (
+                            <p className="text-xs font-semibold text-blue-700 mt-1">
+                              Tag: {item.productTag}
+                            </p>
+                          )}
 
                           <p className="text-xs text-gray-500 mt-1">
                             {item.color} / {item.size}
